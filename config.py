@@ -33,6 +33,7 @@ class Config:
     
     # Database
     database_path: str = "crypto_bot.db"
+    use_postgresql: bool = True
     
     # Logging
     log_level: str = "INFO"

@@ -12,6 +12,7 @@ from .rug_detector import RugDetector
 from .volume_filter import VolumeFilter
 from .telegram_notifier import TelegramNotifier
 from .database import Database
+from .postgresql_database import PostgreSQLDatabase
 from utils.rate_limiter import RateLimiter
 
 class CryptoTradingBot:
@@ -27,7 +28,11 @@ class CryptoTradingBot:
         self.rug_detector = RugDetector(config)
         self.volume_filter = VolumeFilter(config)
         self.telegram_notifier = TelegramNotifier(config)
-        self.database = Database(config)
+        # Initialize database (PostgreSQL or SQLite)
+        if getattr(config, 'use_postgresql', True):
+            self.database = PostgreSQLDatabase(config)
+        else:
+            self.database = Database(config)
         self.rate_limiter = RateLimiter(config.api_calls_per_minute)
         
         # Bot state

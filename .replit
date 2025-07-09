@@ -1,7 +1,8 @@
-modules = ["python-3.11", "postgresql-16"]
+modules = ["python-3.11", "postgresql-16", "python3"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["postgresql"]
 
 [workflows]
 runButton = "Project"
@@ -33,7 +34,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd dashboard && python simple_app.py"
+args = "cd dashboard && python postgresql_app.py"
 waitForPort = 5000
 
 [[ports]]

@@ -44,12 +44,16 @@ Preferred communication style: Simple, everyday language.
 - Interactive buttons for quick access to DEX platforms
 - Command handlers for bot status and help
 
-### 5. Data Layer (`bot/database.py`)
-- SQLite database with tables for token checks and alerts
-- Async database operations using aiosqlite
+### 5. Data Layer 
+- **PostgreSQL Database** (`bot/postgresql_database.py`): Production database with asyncpg connection pooling
+- **SQLite Database** (`bot/database.py`): Legacy database option for local development
+- Async database operations with connection pooling
 - Data persistence for analytics and historical tracking
+- Tables: token_checks, alerts, bot_stats
 
-### 6. Web Dashboard (`dashboard/app.py`)
+### 6. Web Dashboard 
+- **PostgreSQL Dashboard** (`dashboard/postgresql_app.py`): Production dashboard with PostgreSQL integration
+- **SQLite Dashboard** (`dashboard/simple_app.py`): Legacy dashboard for local development
 - Flask-based web interface for monitoring
 - Real-time statistics and token scanning results
 - Bootstrap-based responsive UI
