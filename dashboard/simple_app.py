@@ -178,6 +178,15 @@ def api_alerts():
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Check if alerts table exists and has data
+        cursor.execute("SELECT COUNT(*) FROM alerts")
+        count = cursor.fetchone()[0]
+        
+        if count == 0:
+            # Return empty list if no alerts
+            conn.close()
+            return jsonify([])
+        
         cursor.execute("""
             SELECT token_name, token_symbol, chain, risk_score, timestamp
             FROM alerts 
@@ -190,7 +199,7 @@ def api_alerts():
         for row in cursor.fetchall():
             alerts.append({
                 'token_name': row['token_name'],
-                'token_symbol': row['token_symbol'],
+                'token_symbol': row['token_symbol'], 
                 'chain': row['chain'],
                 'risk_score': row['risk_score'],
                 'timestamp': row['timestamp']
@@ -200,7 +209,8 @@ def api_alerts():
         return jsonify(alerts)
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error in alerts API: {e}")
+        return jsonify([]), 200  # Return empty list instead of error
 
 if __name__ == '__main__':
     # Run Flask app

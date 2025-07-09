@@ -232,10 +232,31 @@ class CryptoTradingBot:
             # Send alert
             await self.telegram_notifier.send_alert(alert_data)
             
+            # Log alert to database
+            await self._log_alert_to_database(alert_data)
+            
             self.logger.info(f"Sent trading alert for {token_name} ({token_symbol}) on {chain}")
             
         except Exception as e:
             self.logger.error(f"Error sending trading alert: {e}")
+    
+    async def _log_alert_to_database(self, alert_data: Dict):
+        """Log sent alert to database"""
+        try:
+            await self.database.log_alert({
+                'token_name': alert_data['token_name'],
+                'token_symbol': alert_data['token_symbol'],
+                'token_address': alert_data['token_address'],
+                'chain': alert_data['chain'],
+                'price_usd': alert_data['price_usd'],
+                'volume_24h': alert_data['volume_24h'],
+                'liquidity_usd': alert_data['liquidity_usd'],
+                'market_cap': alert_data['market_cap'],
+                'risk_score': alert_data['risk_score'],
+                'timestamp': datetime.now().isoformat()
+            })
+        except Exception as e:
+            self.logger.error(f"Error logging alert to database: {e}")
     
     def _calculate_risk_score(self, token: Dict, rug_check_result: Dict) -> float:
         """Calculate risk score for a token (0-100, lower is better)"""
