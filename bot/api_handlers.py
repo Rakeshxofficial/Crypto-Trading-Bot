@@ -1,0 +1,244 @@
+"""
+API handlers for external services (Dexscreener, Rugcheck)
+"""
+
+import aiohttp
+import asyncio
+import logging
+from typing import Dict, List, Optional
+from datetime import datetime
+
+class DexscreenerAPI:
+    """Handler for Dexscreener API interactions"""
+    
+    def __init__(self, config):
+        self.config = config
+        self.logger = logging.getLogger(__name__)
+        self.session = None
+        self.base_url = config.dexscreener_api_base
+        
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create aiohttp session"""
+        if self.session is None or self.session.closed:
+            timeout = aiohttp.ClientTimeout(total=30)
+            self.session = aiohttp.ClientSession(timeout=timeout)
+        return self.session
+    
+    async def get_tokens(self, chain: str) -> List[Dict]:
+        """Get token data from Dexscreener for a specific chain"""
+        try:
+            session = await self._get_session()
+            
+            # Construct URL based on chain
+            if chain == "solana":
+                url = f"{self.base_url}/dex/tokens"
+            elif chain == "bsc":
+                url = f"{self.base_url}/dex/tokens"
+            elif chain == "ethereum":
+                url = f"{self.base_url}/dex/tokens"
+            else:
+                self.logger.warning(f"Unsupported chain: {chain}")
+                return []
+            
+            # Make request to get trending tokens
+            trending_url = f"{self.base_url}/dex/search?q={chain}"
+            
+            async with session.get(trending_url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    pairs = data.get('pairs', [])
+                    
+                    # Filter by chain and market cap
+                    filtered_pairs = []
+                    for pair in pairs:
+                        if pair.get('chainId') == self._get_chain_id(chain):
+                            filtered_pairs.append(pair)
+                    
+                    self.logger.info(f"Retrieved {len(filtered_pairs)} tokens from Dexscreener for {chain}")
+                    return filtered_pairs
+                else:
+                    self.logger.error(f"Dexscreener API error: {response.status}")
+                    return []
+                    
+        except Exception as e:
+            self.logger.error(f"Error fetching tokens from Dexscreener: {e}")
+            return []
+    
+    def _get_chain_id(self, chain: str) -> str:
+        """Get chain ID for Dexscreener API"""
+        chain_ids = {
+            "solana": "solana",
+            "bsc": "bsc",
+            "ethereum": "ethereum"
+        }
+        return chain_ids.get(chain, chain)
+    
+    async def get_token_info(self, token_address: str, chain: str) -> Optional[Dict]:
+        """Get detailed token information"""
+        try:
+            session = await self._get_session()
+            url = f"{self.base_url}/dex/tokens/{token_address}"
+            
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data
+                else:
+                    self.logger.warning(f"Token info not found for {token_address}")
+                    return None
+                    
+        except Exception as e:
+            self.logger.error(f"Error fetching token info: {e}")
+            return None
+    
+    async def close(self):
+        """Close the aiohttp session"""
+        if self.session and not self.session.closed:
+            await self.session.close()
+            self.session = None
+
+class RugcheckAPI:
+    """Handler for Rugcheck API interactions"""
+    
+    def __init__(self, config):
+        self.config = config
+        self.logger = logging.getLogger(__name__)
+        self.session = None
+        self.base_url = config.rugcheck_api_base
+        
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create aiohttp session"""
+        if self.session is None or self.session.closed:
+            timeout = aiohttp.ClientTimeout(total=30)
+            self.session = aiohttp.ClientSession(timeout=timeout)
+        return self.session
+    
+    async def check_token(self, token_address: str, chain: str) -> Dict:
+        """Check token for rug pull risks using Rugcheck API"""
+        try:
+            session = await self._get_session()
+            
+            # Construct URL based on chain
+            if chain == "solana":
+                url = f"{self.base_url}/tokens/{token_address}/report"
+            else:
+                # For other chains, use generic endpoint
+                url = f"{self.base_url}/tokens/{token_address}/report"
+            
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return self._parse_rugcheck_response(data)
+                elif response.status == 404:
+                    self.logger.debug(f"Token not found in Rugcheck: {token_address}")
+                    return self._default_response()
+                else:
+                    self.logger.warning(f"Rugcheck API error: {response.status}")
+                    return self._default_response()
+                    
+        except Exception as e:
+            self.logger.error(f"Error checking token with Rugcheck: {e}")
+            return self._default_response()
+    
+    def _parse_rugcheck_response(self, data: Dict) -> Dict:
+        """Parse Rugcheck API response"""
+        try:
+            result = {
+                'is_rug_risk': False,
+                'is_honeypot': False,
+                'tax_percentage': 0.0,
+                'is_blacklisted': False,
+                'liquidity_locked': False,
+                'owner_renounced': False,
+                'risk_score': 0.0
+            }
+            
+            # Parse different fields from Rugcheck response
+            if 'risks' in data:
+                risks = data['risks']
+                
+                # Check for high tax
+                if 'tax' in risks:
+                    tax_info = risks['tax']
+                    if isinstance(tax_info, dict):
+                        buy_tax = tax_info.get('buy', 0)
+                        sell_tax = tax_info.get('sell', 0)
+                        result['tax_percentage'] = max(buy_tax, sell_tax)
+                        
+                        if result['tax_percentage'] > self.config.max_tax_percentage:
+                            result['is_rug_risk'] = True
+                
+                # Check for honeypot
+                if 'honeypot' in risks:
+                    result['is_honeypot'] = risks['honeypot']
+                    if result['is_honeypot']:
+                        result['is_rug_risk'] = True
+                
+                # Check for blacklist
+                if 'blacklist' in risks:
+                    result['is_blacklisted'] = risks['blacklist']
+                    if result['is_blacklisted']:
+                        result['is_rug_risk'] = True
+            
+            # Check liquidity and ownership
+            if 'liquidity' in data:
+                liquidity_info = data['liquidity']
+                result['liquidity_locked'] = liquidity_info.get('locked', False)
+                
+                if not result['liquidity_locked']:
+                    result['is_rug_risk'] = True
+            
+            if 'ownership' in data:
+                ownership_info = data['ownership']
+                result['owner_renounced'] = ownership_info.get('renounced', False)
+                
+                if not result['owner_renounced']:
+                    result['is_rug_risk'] = True
+            
+            # Calculate overall risk score
+            result['risk_score'] = self._calculate_rugcheck_score(result)
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing Rugcheck response: {e}")
+            return self._default_response()
+    
+    def _calculate_rugcheck_score(self, result: Dict) -> float:
+        """Calculate risk score based on Rugcheck results"""
+        score = 0.0
+        
+        if result['is_honeypot']:
+            score += 50
+        
+        if result['is_blacklisted']:
+            score += 40
+        
+        if result['tax_percentage'] > 0:
+            score += min(result['tax_percentage'] * 2, 30)
+        
+        if not result['liquidity_locked']:
+            score += 20
+        
+        if not result['owner_renounced']:
+            score += 15
+        
+        return min(score, 100.0)
+    
+    def _default_response(self) -> Dict:
+        """Default response when Rugcheck API is unavailable"""
+        return {
+            'is_rug_risk': False,
+            'is_honeypot': False,
+            'tax_percentage': 0.0,
+            'is_blacklisted': False,
+            'liquidity_locked': True,
+            'owner_renounced': True,
+            'risk_score': 0.0
+        }
+    
+    async def close(self):
+        """Close the aiohttp session"""
+        if self.session and not self.session.closed:
+            await self.session.close()
+            self.session = None
