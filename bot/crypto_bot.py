@@ -74,9 +74,9 @@ class CryptoTradingBot:
         scan_count = 0
         while self.is_running:
             try:
-                # Clear processed tokens every 20 scans (about 3-4 minutes) to re-alert on good opportunities
+                # Clear processed tokens every 200 scans (about 30-40 minutes) to re-alert on good opportunities
                 scan_count += 1
-                if scan_count % 20 == 0:
+                if scan_count % 200 == 0:
                     self.processed_tokens.clear()
                     self.logger.info("Cleared processed tokens cache for fresh alerts")
                 
@@ -149,10 +149,10 @@ class CryptoTradingBot:
             # Skip if already processed recently (check database for recent alerts)
             token_key = f"{chain}:{token_address}"
             
-            # Check if we sent an alert for this token in the last 10 minutes (more frequent alerts)
-            recent_alert = await self.database.check_recent_alert(token_address, chain, minutes=10)
+            # Check if we sent an alert for this token in the last 60 minutes to prevent duplicates
+            recent_alert = await self.database.check_recent_alert(token_address, chain, minutes=60)
             if recent_alert:
-                self.logger.debug(f"Skipping {token_name} - alert sent {recent_alert} minutes ago")
+                self.logger.info(f"Skipping {token_name} - alert already sent {recent_alert:.0f} minutes ago")
                 return
             
             # Check token age

@@ -320,7 +320,7 @@ class PostgreSQLDatabase:
                 return None
                 
         except Exception as e:
-            self.logger.log_database_operation("check_recent_alert", False, str(e))
+            self.logger.error(f"Error checking recent alert: {e}")
             return None
     
     async def close(self):

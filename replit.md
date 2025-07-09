@@ -23,6 +23,19 @@ Preferred communication style: Simple, everyday language.
 - **Rate Limiting**: Built-in rate limiting to respect API quotas
 - **Error Handling**: Comprehensive logging and graceful error handling throughout
 
+## Recent Changes (July 9, 2025)
+1. **Enhanced Safety Filters**: Added comprehensive filters to prevent low-quality token alerts
+   - Minimum $5,000 liquidity requirement
+   - Minimum $10,000 market cap requirement
+   - Minimum $500 volume and 10 unique transactions
+   - Single buyer/seller detection
+   - Buy/sell ratio checks
+
+2. **Duplicate Alert Prevention**: Implemented 60-minute cooldown to prevent duplicate alerts
+   - Checks database for recent alerts before sending
+   - Prevents same token from being alerted multiple times
+   - Clear logging of skipped duplicates
+
 ## Key Components
 
 ### 1. Bot Core (`bot/crypto_bot.py`)
