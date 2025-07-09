@@ -298,6 +298,27 @@ class PostgreSQLDatabase:
             self.logger.error(f"Error exporting data from {table_name}: {e}")
             return []
     
+    async def check_recent_alert(self, token_address: str, chain: str, minutes: int = 30) -> Optional[int]:
+        """Check if alert was sent for this token recently"""
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchrow("""
+                    SELECT EXTRACT(EPOCH FROM (NOW() - timestamp))/60 as minutes_ago
+                    FROM alerts 
+                    WHERE token_address = $1 AND chain = $2 
+                    AND timestamp > NOW() - INTERVAL '{} minutes'
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                """.format(minutes), token_address, chain)
+                
+                if result:
+                    return int(result['minutes_ago'])
+                return None
+                
+        except Exception as e:
+            self.logger.log_database_operation("check_recent_alert", False, str(e))
+            return None
+    
     async def close(self):
         """Close database connection pool"""
         if self.pool:

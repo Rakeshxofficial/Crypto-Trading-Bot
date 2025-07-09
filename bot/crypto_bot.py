@@ -71,8 +71,15 @@ class CryptoTradingBot:
     
     async def _monitoring_loop(self):
         """Main monitoring loop that scans for trading opportunities"""
+        scan_count = 0
         while self.is_running:
             try:
+                # Clear processed tokens every 20 scans (about 3-4 minutes) to re-alert on good opportunities
+                scan_count += 1
+                if scan_count % 20 == 0:
+                    self.processed_tokens.clear()
+                    self.logger.info("Cleared processed tokens cache for fresh alerts")
+                
                 # Scan all supported blockchains concurrently
                 tasks = []
                 for chain in self.config.supported_chains:
@@ -138,9 +145,13 @@ class CryptoTradingBot:
             token_name = token.get('baseToken', {}).get('name', 'Unknown')
             token_symbol = token.get('baseToken', {}).get('symbol', 'Unknown')
             
-            # Skip if already processed recently
+            # Skip if already processed recently (check database for recent alerts)
             token_key = f"{chain}:{token_address}"
-            if token_key in self.processed_tokens:
+            
+            # Check if we sent an alert for this token in the last 10 minutes (more frequent alerts)
+            recent_alert = await self.database.check_recent_alert(token_address, chain, minutes=10)
+            if recent_alert:
+                self.logger.debug(f"Skipping {token_name} - alert sent {recent_alert} minutes ago")
                 return
             
             # Check token age

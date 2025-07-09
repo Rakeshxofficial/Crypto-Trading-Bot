@@ -19,7 +19,7 @@ class Config:
     
     # Trading Parameters
     max_market_cap: float = 5_000_000  # $5M
-    min_token_age_minutes: int = 1
+    min_token_age_minutes: int = 5  # Tokens must be at least 5 minutes old
     max_tax_percentage: float = 10.0
     min_liquidity_usd: float = 10_000
     volume_to_mcap_ratio_threshold: float = 0.1

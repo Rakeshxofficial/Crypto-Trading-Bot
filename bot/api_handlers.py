@@ -29,18 +29,41 @@ class DexscreenerAPI:
         try:
             session = await self._get_session()
             
-            # Construct URL based on chain
-            if chain == "solana":
-                url = f"{self.base_url}/dex/tokens"
-            elif chain == "bsc":
-                url = f"{self.base_url}/dex/tokens"
-            elif chain == "ethereum":
-                url = f"{self.base_url}/dex/tokens"
-            else:
-                self.logger.warning(f"Unsupported chain: {chain}")
-                return []
+            # Get chain ID
+            chain_id = self._get_chain_id(chain)
             
-            # Make request to get trending tokens
+            # Get multiple pages of tokens to find more variety
+            all_pairs = []
+            
+            # Try multiple search queries to get varied results
+            queries = [
+                f"{self.base_url}/dex/search?q={chain}",
+                f"{self.base_url}/dex/search?q=new",
+                f"{self.base_url}/dex/search?q=trending"
+            ]
+            
+            for query_url in queries:
+                try:
+                    async with session.get(query_url) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            pairs = data.get('pairs', [])
+                            
+                            # Filter by chain and avoid duplicates
+                            seen_addresses = {p.get('baseToken', {}).get('address') for p in all_pairs}
+                            for pair in pairs:
+                                if (pair.get('chainId') == chain_id and 
+                                    pair.get('baseToken', {}).get('address') not in seen_addresses):
+                                    all_pairs.append(pair)
+                except:
+                    continue
+            
+            # If we have results, return them
+            if all_pairs:
+                self.logger.info(f"Retrieved {len(all_pairs)} total tokens from Dexscreener for {chain}")
+                return all_pairs
+            
+            # If still no results, try the default endpoint
             trending_url = f"{self.base_url}/dex/search?q={chain}"
             
             async with session.get(trending_url) as response:
@@ -48,17 +71,18 @@ class DexscreenerAPI:
                     data = await response.json()
                     pairs = data.get('pairs', [])
                     
-                    # Filter by chain and market cap
-                    filtered_pairs = []
+                    # Filter by chain and avoid duplicates
+                    seen_addresses = {p.get('baseToken', {}).get('address') for p in all_pairs}
                     for pair in pairs:
-                        if pair.get('chainId') == self._get_chain_id(chain):
-                            filtered_pairs.append(pair)
+                        if (pair.get('chainId') == chain_id and 
+                            pair.get('baseToken', {}).get('address') not in seen_addresses):
+                            all_pairs.append(pair)
                     
-                    self.logger.info(f"Retrieved {len(filtered_pairs)} tokens from Dexscreener for {chain}")
-                    return filtered_pairs
+                    self.logger.info(f"Retrieved {len(all_pairs)} total tokens from Dexscreener for {chain}")
+                    return all_pairs
                 else:
                     self.logger.error(f"Dexscreener API error: {response.status}")
-                    return []
+                    return all_pairs
                     
         except Exception as e:
             self.logger.error(f"Error fetching tokens from Dexscreener: {e}")
