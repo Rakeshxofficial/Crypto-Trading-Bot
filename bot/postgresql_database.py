@@ -65,7 +65,9 @@ class PostgreSQLDatabase:
                     risk_score DECIMAL(5, 2),
                     tax_percentage DECIMAL(5, 2),
                     is_honeypot BOOLEAN DEFAULT FALSE,
-                    alert_sent BOOLEAN DEFAULT FALSE
+                    alert_sent BOOLEAN DEFAULT FALSE,
+                    buys_1h INTEGER DEFAULT 0,
+                    sells_1h INTEGER DEFAULT 0
                 )
             """)
             
@@ -117,8 +119,8 @@ class PostgreSQLDatabase:
                     INSERT INTO token_checks (
                         chain, token_address, token_name, token_symbol, price_usd,
                         volume_24h, liquidity_usd, market_cap, status, risk_score,
-                        tax_percentage, is_honeypot, alert_sent
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                        tax_percentage, is_honeypot, alert_sent, buys_1h, sells_1h
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                 """, 
                     token_data.get('chain', ''),
                     token_data.get('token_address', ''),
@@ -132,7 +134,9 @@ class PostgreSQLDatabase:
                     float(token_data.get('risk_score', 0)),
                     float(token_data.get('tax_percentage', 0)),
                     token_data.get('is_honeypot', False),
-                    token_data.get('alert_sent', False)
+                    token_data.get('alert_sent', False),
+                    token_data.get('buys_1h', 0),
+                    token_data.get('sells_1h', 0)
                 )
                 
         except Exception as e:

@@ -131,7 +131,8 @@ class CryptoTradingBot:
         for token in tokens:
             try:
                 market_cap = token.get('fdv', 0) or token.get('marketCap', 0)
-                if market_cap and market_cap < self.config.max_market_cap:
+                if (market_cap and 
+                    self.config.min_market_cap <= market_cap < self.config.max_market_cap):
                     filtered.append(token)
             except (ValueError, TypeError):
                 continue
@@ -170,6 +171,12 @@ class CryptoTradingBot:
                 await self._log_token_check(token, chain, "rug_risk", rug_check_result)
                 return
             
+            # Apply additional safety filters
+            if not self._passes_safety_filters(token):
+                self.logger.info(f"Skipping {token_name} ({token_symbol}) - failed safety filters")
+                await self._log_token_check(token, chain, "safety_filter_failed", {})
+                return
+            
             # Check for fake volume
             if self.volume_filter.is_fake_volume(token):
                 self.logger.info(f"Skipping {token_name} ({token_symbol}) - fake volume detected")
@@ -187,6 +194,57 @@ class CryptoTradingBot:
             
         except Exception as e:
             self.logger.error(f"Error processing token {token.get('baseToken', {}).get('name', 'Unknown')}: {e}")
+    
+    def _passes_safety_filters(self, token: Dict) -> bool:
+        """Apply comprehensive safety filters to token"""
+        try:
+            # Extract token data
+            liquidity_usd = token.get('liquidity', {}).get('usd', 0)
+            volume_24h = token.get('volume', {}).get('h24', 0) 
+            market_cap = token.get('fdv', 0) or token.get('marketCap', 0)
+            txns = token.get('txns', {})
+            
+            # 1. Minimum Liquidity Filter
+            if liquidity_usd < self.config.min_liquidity_usd:
+                self.logger.debug(f"Failed liquidity filter: ${liquidity_usd:.2f} < ${self.config.min_liquidity_usd}")
+                return False
+            
+            # 2. Minimum Market Cap (already checked in filter_by_market_cap, but double-check)
+            if market_cap < self.config.min_market_cap:
+                self.logger.debug(f"Failed market cap filter: ${market_cap:.2f} < ${self.config.min_market_cap}")
+                return False
+            
+            # 3. Minimum 24h Volume
+            if volume_24h < self.config.min_volume_24h:
+                self.logger.debug(f"Failed volume filter: ${volume_24h:.2f} < ${self.config.min_volume_24h}")
+                return False
+            
+            # 4. Minimum Unique Transactions
+            buys_1h = txns.get('h1', {}).get('buys', 0)
+            sells_1h = txns.get('h1', {}).get('sells', 0)
+            total_txns = buys_1h + sells_1h
+            
+            if buys_1h < self.config.min_unique_transactions:
+                self.logger.debug(f"Failed transaction filter: {buys_1h} buys < {self.config.min_unique_transactions}")
+                return False
+            
+            # 5. Flag tokens with only 1 buyer/seller (suspicious)
+            if buys_1h <= 1 or sells_1h == 0:
+                self.logger.debug(f"Suspicious transaction pattern: {buys_1h} buys, {sells_1h} sells")
+                return False
+            
+            # 6. Check for reasonable buy/sell ratio (avoid pump schemes)
+            if sells_1h > 0:
+                buy_sell_ratio = buys_1h / sells_1h
+                if buy_sell_ratio > 10 or buy_sell_ratio < 0.1:  # Too one-sided
+                    self.logger.debug(f"Suspicious buy/sell ratio: {buy_sell_ratio:.2f}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.logger.debug(f"Error in safety filters: {e}")
+            return False
     
     def _is_token_old_enough(self, token: Dict) -> bool:
         """Check if token is old enough based on configuration"""
@@ -314,6 +372,10 @@ class CryptoTradingBot:
         try:
             base_token = token.get('baseToken', {})
             
+            txns = token.get('txns', {})
+            buys_1h = txns.get('h1', {}).get('buys', 0)
+            sells_1h = txns.get('h1', {}).get('sells', 0)
+            
             log_data = {
                 'timestamp': datetime.now(),
                 'chain': chain,
@@ -327,7 +389,9 @@ class CryptoTradingBot:
                 'status': status,
                 'risk_score': self._calculate_risk_score(token, check_result),
                 'tax_percentage': check_result.get('tax_percentage', 0),
-                'is_honeypot': check_result.get('is_honeypot', False)
+                'is_honeypot': check_result.get('is_honeypot', False),
+                'buys_1h': buys_1h,
+                'sells_1h': sells_1h
             }
             
             await self.database.log_token_check(log_data)
