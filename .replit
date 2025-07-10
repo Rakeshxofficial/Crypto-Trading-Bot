@@ -32,3 +32,4 @@ externalPort = 80
 [deployment]
 deploymentTarget = "gce"
 ignorePorts = true
+run = ["sh", "-c", "python app.py"]
