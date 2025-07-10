@@ -33,7 +33,7 @@ class Config:
     
     # Telegram Alert Settings
     telegram_rate_limit_per_minute: int = 5  # Max 5 alerts per minute
-    token_cooldown_minutes: int = 10  # Don't repeat same token for 10 minutes (reduced)
+    token_cooldown_minutes: int = 5  # Don't repeat same token for 5 minutes (reduced for more flow)
     alerts_per_minute_target: int = 5  # Target 5 alerts per minute
     retry_on_error: bool = True  # Retry failed operations
     max_retry_attempts: int = 3  # Maximum retry attempts

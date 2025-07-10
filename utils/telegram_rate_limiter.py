@@ -58,7 +58,7 @@ class TelegramRateLimiter:
 class TokenTracker:
     """Track sent tokens to prevent duplicates"""
     
-    def __init__(self, cooldown_minutes: int = 30):
+    def __init__(self, cooldown_minutes: int = 5):
         self.cooldown_minutes = cooldown_minutes
         self.sent_tokens: Dict[str, float] = {}  # token_key -> timestamp
         self.logger = logging.getLogger(__name__)

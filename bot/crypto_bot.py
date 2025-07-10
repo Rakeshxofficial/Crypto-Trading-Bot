@@ -134,7 +134,7 @@ class CryptoTradingBot:
                     })
                 
                 # Wait before next scan (reduced for more frequent scanning)
-                await asyncio.sleep(self.config.request_delay_seconds * 5)
+                await asyncio.sleep(self.config.request_delay_seconds * 3)
                 
             except Exception as e:
                 self.logger.error(f"Error in monitoring loop: {e}")

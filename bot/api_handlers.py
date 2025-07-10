@@ -52,7 +52,11 @@ class DexscreenerAPI:
             queries = [
                 f"{self.base_url}/dex/search?q=new%20{chain}",
                 f"{self.base_url}/dex/search?q=moon",
-                f"{self.base_url}/dex/search?q=gem"
+                f"{self.base_url}/dex/search?q=gem",
+                f"{self.base_url}/dex/search?q=token",
+                f"{self.base_url}/dex/search?q=coin",
+                f"{self.base_url}/dex/search?q=doge",
+                f"{self.base_url}/dex/search?q=pepe"
             ]
             
             for query_url in queries:

@@ -77,19 +77,20 @@ Preferred communication style: Simple, everyday language.
    - Dual-layer checking: by token address AND token name
    - Memory-based tracking in TelegramNotifier with token names
    - Database-based duplicate checking with name validation
-   - Successfully sending diverse tokens like Gemo, Beenz, SnakeOfSolana, NPC Solana
+   - Successfully sending diverse tokens: Department Of Governm, Department of Gov Efficiency, No Cash Value, Dogecoin
 
 4. **Relaxed Safety Filters**: Significantly more lenient to allow diverse token flow
    - Minimum liquidity: $1K → $100 (more inclusive)
    - Minimum volume: $100 → $50 (allows newer tokens)
    - Minimum transactions: 1 → 0 (allows brand new tokens)
-   - Reduced token cooldown: 30 → 10 minutes (more frequent alerts)
+   - Reduced token cooldown: 30 → 5 minutes (more frequent alerts)
    - Volume and transaction filters now advisory rather than blocking
 
 5. **Enhanced Scanning Frequency**: Faster scanning to find more tokens
-   - Reduced scan delay from 10 seconds to 5 seconds
+   - Reduced scan delay from 10 seconds to 3 seconds
    - More frequent checks to build pending alerts queue
    - Improved token discovery rate across all chains
+   - Added diverse search queries (doge, pepe, token, coin) for better variety
 
 ### Earlier Updates
 1. **Removed All Fallback Data**: Bot now exclusively uses real Dexscreener API data
