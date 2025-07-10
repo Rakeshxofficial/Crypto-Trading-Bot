@@ -19,14 +19,14 @@ class Config:
     
     # Trading Parameters - Updated with comprehensive filters
     max_market_cap: float = 100_000_000_000  # $100B - virtually unlimited
-    min_market_cap: float = 20_000_000  # $20M minimum market cap
+    min_market_cap: float = 50_000  # $50K minimum market cap (much more inclusive)
     min_token_age_minutes: int = 0  # No minimum age - even 1 hour old is fine
     max_tax_percentage: float = 100.0  # Allow any tax percentage
-    min_liquidity_usd: float = 2_000  # $2K minimum liquidity
-    min_volume_24h: float = 500  # $500 minimum 24h volume
+    min_liquidity_usd: float = 1_000  # $1K minimum liquidity (more inclusive)
+    min_volume_24h: float = 100  # $100 minimum 24h volume (more inclusive)
     min_unique_transactions: int = 0  # No minimum transactions
     volume_to_mcap_ratio_threshold: float = 100.0  # Allow any volume ratio
-    min_token_holders: int = 100  # Minimum token holders required
+    min_token_holders: int = 10  # Minimum 10 token holders (much more inclusive)
     
     # Price Return Thresholds for Status Classification
     min_return_1h: float = 1.0  # 1% minimum 1-hour return

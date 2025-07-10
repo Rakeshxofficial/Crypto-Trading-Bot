@@ -25,12 +25,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
-### Comprehensive Risk Classification System (Latest Update)
-1. **Implemented Hard Filters**: Added comprehensive safety filters that all tokens must pass
-   - **Market Cap**: Minimum $20M (configurable via config.yaml)
-   - **Volume**: Minimum $500 24h volume (configurable)
-   - **Liquidity**: Minimum $2K liquidity (configurable)
-   - **Token Holders**: Minimum 100 holders (configurable)
+### Comprehensive Risk Classification System with Inclusive Filtering (Latest Update)
+1. **Implemented Inclusive Filters**: Added basic safety filters with comprehensive risk transparency
+   - **Market Cap**: Minimum $50K (very inclusive, configurable via config.yaml)
+   - **Volume**: Minimum $100 24h volume (very inclusive, configurable)
+   - **Liquidity**: Minimum $1K liquidity (very inclusive, configurable)
+   - **Token Holders**: Minimum 10 holders (very inclusive, configurable)
    - **Token Age**: Any age is fine (even 1 hour old tokens accepted)
 
 2. **Added Status Classification System**: 5-tier risk assessment based on price returns
