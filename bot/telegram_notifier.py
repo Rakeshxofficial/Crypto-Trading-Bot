@@ -82,8 +82,8 @@ class TelegramNotifier:
             # Format alert message
             message = self._format_alert_message(alert_data)
             
-            # NO KEYBOARD - Remove all buttons to prevent accidental dismissal
-            keyboard = None
+            # Create selective keyboard (only essential trading buttons, no Copy/Dismiss)
+            keyboard = self._create_selective_keyboard(alert_data)
             
             # Send message with retry logic
             retry_count = 0
@@ -95,6 +95,7 @@ class TelegramNotifier:
                         chat_id=self.config.telegram_chat_id,
                         text=message,
                         parse_mode='HTML',
+                        reply_markup=keyboard,
                         disable_web_page_preview=True
                     )
                     
@@ -240,6 +241,57 @@ class TelegramNotifier:
             
         except Exception as e:
             self.logger.error(f"Error creating alert keyboard: {e}")
+            return InlineKeyboardMarkup([[]])
+    
+    def _create_selective_keyboard(self, alert_data: Dict) -> InlineKeyboardMarkup:
+        """Create keyboard with only essential trading buttons (no Copy/Dismiss)"""
+        try:
+            keyboard = []
+            
+            # Get data for buttons
+            chain = alert_data.get('chain', '').lower()
+            token_address = alert_data.get('token_address', '')
+            pair_address = alert_data.get('pair_address', '')
+            chart_url = alert_data.get('chart_url', '')
+            
+            # Chain-specific trading buttons
+            if chain == 'solana':
+                if token_address:
+                    raydium_url = f"https://raydium.io/swap?inputCurrency=sol&outputCurrency={token_address}"
+                    keyboard.append([InlineKeyboardButton("🔄 Buy on Raydium", url=raydium_url)])
+                
+                if token_address:
+                    dextools_url = f"https://www.dextools.io/app/solana/pair-explorer/{pair_address or token_address}"
+                    keyboard.append([InlineKeyboardButton("📊 DexTools", url=dextools_url)])
+            
+            elif chain == 'bsc':
+                if token_address:
+                    pancake_url = f"https://pancakeswap.finance/swap?outputCurrency={token_address}"
+                    keyboard.append([InlineKeyboardButton("🥞 Buy on PancakeSwap", url=pancake_url)])
+                
+                if token_address:
+                    dextools_url = f"https://www.dextools.io/app/bnb/pair-explorer/{pair_address or token_address}"
+                    keyboard.append([InlineKeyboardButton("📊 DexTools", url=dextools_url)])
+            
+            elif chain == 'ethereum':
+                if token_address:
+                    uniswap_url = f"https://app.uniswap.org/#/swap?outputCurrency={token_address}"
+                    keyboard.append([InlineKeyboardButton("🦄 Buy on Uniswap", url=uniswap_url)])
+                
+                if token_address:
+                    dextools_url = f"https://www.dextools.io/app/ether/pair-explorer/{pair_address or token_address}"
+                    keyboard.append([InlineKeyboardButton("📊 DexTools", url=dextools_url)])
+            
+            # Chart button (always show if available)
+            if chart_url:
+                keyboard.append([InlineKeyboardButton("📈 View Chart", url=chart_url)])
+            
+            # NO Copy Address or Dismiss buttons - they cause issues
+            
+            return InlineKeyboardMarkup(keyboard)
+            
+        except Exception as e:
+            self.logger.error(f"Error creating selective keyboard: {e}")
             return InlineKeyboardMarkup([[]])
     
     async def _start_command(self, update, context):

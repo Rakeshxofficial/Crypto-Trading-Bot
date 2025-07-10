@@ -39,11 +39,11 @@ Preferred communication style: Simple, everyday language.
    - Displays as exact number when available or estimated count
    - Format: "👥 Token Holders: 1,234" or "👥 Token Holders: ~50"
 
-3. **Improved Telegram UX**: Removed all buttons to prevent accidental dismissal
-   - Completely removed "Copy Address" and "Dismiss" buttons
+3. **Improved Telegram UX**: Selective button configuration to prevent accidental dismissal
+   - Removed problematic "Copy Address" and "Dismiss" buttons that were causing message deletion
    - Token address now displayed as plain text: "🧾 Token Address: [address]"
-   - Prevents users from accidentally deleting alerts by clicking "Dismiss"
-   - Makes token address copying more intuitive (copy-paste from text)
+   - Kept essential trading buttons: "Buy on Raydium/PancakeSwap/Uniswap", "DexTools", "View Chart"
+   - Users can now trade immediately without risking message deletion
 
 ### Telegram Channel Configuration (Previous Update)
 1. **Alert Destination Changed**: Successfully updated bot to send alerts to Telegram channel
