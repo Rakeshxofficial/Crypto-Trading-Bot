@@ -37,7 +37,10 @@ class TelegramNotifier:
             await self.application.initialize()
             await self.application.start()
             
-            self.logger.info("Telegram bot started successfully")
+            # Start polling for updates
+            await self.application.updater.start_polling()
+            
+            self.logger.info("Telegram bot started successfully and polling for commands")
             
             # Send startup message
             await self._send_startup_message()
@@ -50,6 +53,7 @@ class TelegramNotifier:
         """Stop the Telegram bot"""
         try:
             if self.application:
+                await self.application.updater.stop()
                 await self.application.stop()
                 await self.application.shutdown()
             self.logger.info("Telegram bot stopped")
