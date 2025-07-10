@@ -25,6 +25,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
+### Deployment Configuration (Latest)
+1. **Production-Ready Application**: Created unified app.py for deployment
+   - Combines bot and dashboard in single process
+   - Proper threading for concurrent operation
+   - HTTP server listening on port 5000 for Autoscale compatibility
+   - Configured for background worker deployment
+
+2. **Deployment Fixes**: Resolved all deployment errors
+   - Fixed undefined $file variable issues
+   - Ensured HTTP server runs for Autoscale requirements
+   - Proper run command configuration
+   - Both bot and dashboard operational simultaneously
+
 ### Alert System Improvements
 1. **Duplicate Prevention**: Enhanced token tracking with configurable cooldown period
    - 30-minute cooldown for same token alerts (configurable)

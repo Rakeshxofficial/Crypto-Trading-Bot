@@ -14,29 +14,21 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Bot"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Dashboard"
+args = "Production"
 
 [[workflows.workflow]]
-name = "Bot"
+name = "Production"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pip install aiohttp asyncio pandas configparser python-telegram-bot flask aiosqlite && python main.py"
-
-[[workflows.workflow]]
-name = "Dashboard"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd dashboard && python postgresql_app.py"
+args = "python app.py"
 waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[deployment]
+deploymentTarget = "gce"
+ignorePorts = true
