@@ -82,8 +82,8 @@ class TelegramNotifier:
             # Format alert message
             message = self._format_alert_message(alert_data)
             
-            # Create inline keyboard
-            keyboard = self._create_alert_keyboard(alert_data)
+            # NO KEYBOARD - Remove all buttons to prevent accidental dismissal
+            keyboard = None
             
             # Send message with retry logic
             retry_count = 0
@@ -95,7 +95,6 @@ class TelegramNotifier:
                         chat_id=self.config.telegram_chat_id,
                         text=message,
                         parse_mode='HTML',
-                        reply_markup=keyboard,
                         disable_web_page_preview=True
                     )
                     
@@ -149,7 +148,10 @@ class TelegramNotifier:
             # Risk level indicator
             risk_emoji = self._get_risk_emoji(risk_score)
             
-            # Format message
+            # Get token address from alert data
+            token_address = alert_data.get('token_address', 'Unknown')
+            
+            # Format message with token address displayed as text
             message = f"""
 🚨 <b>CRYPTO TRADING ALERT</b> 🚨
 
@@ -157,6 +159,7 @@ class TelegramNotifier:
 🔗 <b>Chain:</b> {chain}
 ⏰ <b>Token Age:</b> {token_age}
 👥 <b>Token Holders:</b> {token_holders}
+🧾 <b>Token Address:</b> <code>{token_address}</code>
 💰 <b>Price:</b> ${price_usd:.8f}
 📈 <b>24h Volume:</b> ${volume_24h:,.0f}
 💧 <b>Liquidity:</b> ${liquidity_usd:,.0f}

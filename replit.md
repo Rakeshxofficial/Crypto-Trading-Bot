@@ -25,7 +25,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
-### Unlimited Token Mode (Latest Update)
+### Unlimited Token Mode with UX Improvements (Latest Update)
 1. **Removed All Restrictions**: Bot now configured for unlimited token sending
    - Removed all cooldown periods (0 minutes)
    - Removed all safety filters and restrictions
@@ -38,6 +38,12 @@ Preferred communication style: Simple, everyday language.
    - Each alert now shows total token holders count
    - Displays as exact number when available or estimated count
    - Format: "👥 Token Holders: 1,234" or "👥 Token Holders: ~50"
+
+3. **Improved Telegram UX**: Removed all buttons to prevent accidental dismissal
+   - Completely removed "Copy Address" and "Dismiss" buttons
+   - Token address now displayed as plain text: "🧾 Token Address: [address]"
+   - Prevents users from accidentally deleting alerts by clicking "Dismiss"
+   - Makes token address copying more intuitive (copy-paste from text)
 
 ### Telegram Channel Configuration (Previous Update)
 1. **Alert Destination Changed**: Successfully updated bot to send alerts to Telegram channel
