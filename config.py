@@ -22,9 +22,9 @@ class Config:
     min_market_cap: float = 10_000  # $10K minimum market cap
     min_token_age_minutes: int = 1  # Tokens must be at least 1 minute old (lowered from 5)
     max_tax_percentage: float = 10.0
-    min_liquidity_usd: float = 1_000  # $1K minimum liquidity (lowered to allow more tokens)
-    min_volume_24h: float = 100  # $100 minimum 24h volume (lowered to allow more tokens)
-    min_unique_transactions: int = 1  # Minimum 1 unique buy in last hour (lowered significantly)
+    min_liquidity_usd: float = 100  # $100 minimum liquidity (lowered for more tokens)
+    min_volume_24h: float = 50  # $50 minimum 24h volume (lowered for more tokens)
+    min_unique_transactions: int = 0  # Allow tokens with 0 transactions for new tokens
     volume_to_mcap_ratio_threshold: float = 0.1
     
     # Rate Limiting
@@ -33,7 +33,8 @@ class Config:
     
     # Telegram Alert Settings
     telegram_rate_limit_per_minute: int = 5  # Max 5 alerts per minute
-    token_cooldown_minutes: int = 30  # Don't repeat same token for 30 minutes
+    token_cooldown_minutes: int = 10  # Don't repeat same token for 10 minutes (reduced)
+    alerts_per_minute_target: int = 5  # Target 5 alerts per minute
     retry_on_error: bool = True  # Retry failed operations
     max_retry_attempts: int = 3  # Maximum retry attempts
     retry_delay_seconds: float = 2.0  # Initial retry delay (exponential backoff)

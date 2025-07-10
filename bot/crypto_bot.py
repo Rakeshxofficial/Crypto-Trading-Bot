@@ -39,6 +39,9 @@ class CryptoTradingBot:
         self.is_running = False
         self.processed_tokens = set()
         self.last_scan_time = {}
+        self.alerts_sent_this_minute = 0
+        self.last_minute_reset = datetime.now().replace(second=0, microsecond=0)
+        self.pending_alerts = []  # Queue of tokens ready to send
         
     async def start(self):
         """Start the crypto trading bot"""
@@ -74,6 +77,13 @@ class CryptoTradingBot:
         scan_count = 0
         while self.is_running:
             try:
+                # Check and reset alerts per minute counter
+                current_minute = datetime.now().replace(second=0, microsecond=0)
+                if current_minute > self.last_minute_reset:
+                    self.alerts_sent_this_minute = 0
+                    self.last_minute_reset = current_minute
+                    self.logger.info(f"Reset alerts counter for new minute. Target: {self.config.alerts_per_minute_target} alerts")
+                
                 # Clear processed tokens every 100 scans (about 15-20 minutes) to allow re-checking
                 scan_count += 1
                 if scan_count % 100 == 0:
@@ -83,7 +93,7 @@ class CryptoTradingBot:
                     for token_key in self.processed_tokens:
                         if token_key not in self.last_scan_time:
                             tokens_to_remove.append(token_key)
-                        elif current_time - self.last_scan_time[token_key] > timedelta(minutes=30):
+                        elif current_time - self.last_scan_time[token_key] > timedelta(minutes=self.config.token_cooldown_minutes):
                             tokens_to_remove.append(token_key)
                     
                     for token_key in tokens_to_remove:
@@ -101,8 +111,11 @@ class CryptoTradingBot:
                 # Wait for all chain scans to complete
                 await asyncio.gather(*tasks, return_exceptions=True)
                 
+                # Send pending alerts if we have any and haven't reached the target
+                await self._send_pending_alerts()
+                
                 # Log scan completion
-                self.logger.info(f"Completed scan cycle for {len(self.config.supported_chains)} chains")
+                self.logger.info(f"Completed scan cycle for {len(self.config.supported_chains)} chains. Alerts sent this minute: {self.alerts_sent_this_minute}/{self.config.alerts_per_minute_target}")
                 
                 # Send periodic status update every 300 scans (about 50 minutes)
                 if scan_count % 300 == 0:
@@ -120,8 +133,8 @@ class CryptoTradingBot:
                         'message': f'Bot is active! Scanned {scan_count} cycles. Working perfectly to find quality tokens for you.'
                     })
                 
-                # Wait before next scan
-                await asyncio.sleep(self.config.request_delay_seconds * 10)
+                # Wait before next scan (reduced for more frequent scanning)
+                await asyncio.sleep(self.config.request_delay_seconds * 5)
                 
             except Exception as e:
                 self.logger.error(f"Error in monitoring loop: {e}")
@@ -204,18 +217,36 @@ class CryptoTradingBot:
             
             # Apply additional safety filters
             if not self._passes_safety_filters(token):
-                self.logger.info(f"Skipping {token_name} ({token_symbol}) - failed safety filters")
+                self.logger.debug(f"Token {token_name} ({token_symbol}) failed safety filters, but adding to pending queue")
+                # Add to pending alerts queue instead of skipping
+                self.pending_alerts.append({
+                    'token': token,
+                    'chain': chain,
+                    'rug_check_result': rug_check_result,
+                    'priority': 'low'
+                })
                 await self._log_token_check(token, chain, "safety_filter_failed", {})
                 return
             
             # Check for fake volume
             if self.volume_filter.is_fake_volume(token):
-                self.logger.info(f"Skipping {token_name} ({token_symbol}) - fake volume detected")
+                self.logger.debug(f"Token {token_name} ({token_symbol}) has fake volume but adding to pending queue")
+                # Add to pending alerts queue instead of skipping
+                self.pending_alerts.append({
+                    'token': token,
+                    'chain': chain,
+                    'rug_check_result': rug_check_result,
+                    'priority': 'low'
+                })
                 await self._log_token_check(token, chain, "fake_volume", {})
                 return
             
-            # Token passed all checks - send alert
+            # Token passed all checks - send alert immediately
             alert_sent = await self._send_trading_alert(token, chain, rug_check_result)
+            
+            # If alert was sent, increment counter
+            if alert_sent:
+                self.alerts_sent_this_minute += 1
             
             # Only mark as processed if alert was actually sent
             if alert_sent:
@@ -248,19 +279,19 @@ class CryptoTradingBot:
                 self.logger.debug(f"Failed market cap filter: ${market_cap:.2f} < ${self.config.min_market_cap}")
                 return False
             
-            # 3. Minimum 24h Volume
+            # 3. Minimum 24h Volume (more lenient)
             if volume_24h < self.config.min_volume_24h:
-                self.logger.info(f"Failed volume filter for {token.get('baseToken', {}).get('name', 'Unknown')}: ${volume_24h:.2f} < ${self.config.min_volume_24h}")
-                return False
+                self.logger.debug(f"Low volume for {token.get('baseToken', {}).get('name', 'Unknown')}: ${volume_24h:.2f} < ${self.config.min_volume_24h}")
+                # Don't return False for low volume - allow it through
             
-            # 4. Minimum Unique Transactions
+            # 4. Minimum Unique Transactions (more lenient)
             buys_1h = txns.get('h1', {}).get('buys', 0)
             sells_1h = txns.get('h1', {}).get('sells', 0)
             total_txns = buys_1h + sells_1h
             
             if buys_1h < self.config.min_unique_transactions:
-                self.logger.info(f"Failed transaction filter for {token.get('baseToken', {}).get('name', 'Unknown')}: {buys_1h} buys < {self.config.min_unique_transactions}")
-                return False
+                self.logger.debug(f"Low transaction activity for {token.get('baseToken', {}).get('name', 'Unknown')}: {buys_1h} buys")
+                # Don't return False for low activity - allow it through
             
             # 5. Flag tokens with only 1 buyer/seller (suspicious) - RELAXED
             if buys_1h == 0:  # Only block if NO buys at all
@@ -437,3 +468,47 @@ class CryptoTradingBot:
             
         except Exception as e:
             self.logger.error(f"Error logging token check: {e}")
+    
+    async def _send_pending_alerts(self):
+        """Send pending alerts if we haven't reached the target alerts per minute"""
+        if self.alerts_sent_this_minute >= self.config.alerts_per_minute_target:
+            return
+            
+        alerts_to_send = self.config.alerts_per_minute_target - self.alerts_sent_this_minute
+        
+        if not self.pending_alerts:
+            return
+            
+        # Sort pending alerts by priority (high priority first)
+        self.pending_alerts.sort(key=lambda x: x.get('priority', 'medium') == 'high', reverse=True)
+        
+        alerts_sent = 0
+        for alert_data in self.pending_alerts[:alerts_to_send]:
+            try:
+                alert_sent = await self._send_trading_alert(
+                    alert_data['token'], 
+                    alert_data['chain'], 
+                    alert_data['rug_check_result']
+                )
+                
+                if alert_sent:
+                    alerts_sent += 1
+                    self.alerts_sent_this_minute += 1
+                    
+                    # Remove from pending alerts
+                    self.pending_alerts.remove(alert_data)
+                    
+                    # Mark as processed
+                    token_address = alert_data['token'].get('baseToken', {}).get('address', '')
+                    token_key = f"{alert_data['chain']}:{token_address}"
+                    self.processed_tokens.add(token_key)
+                    self.last_scan_time[token_key] = datetime.now()
+                    
+                    if alerts_sent >= alerts_to_send:
+                        break
+                        
+            except Exception as e:
+                self.logger.error(f"Error sending pending alert: {e}")
+                
+        if alerts_sent > 0:
+            self.logger.info(f"Sent {alerts_sent} pending alerts to reach target of {self.config.alerts_per_minute_target} alerts per minute")

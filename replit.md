@@ -61,17 +61,30 @@ Preferred communication style: Simple, everyday language.
    - `max_retry_attempts`: Number of retries
    - `retry_delay_seconds`: Initial retry delay
 
+### Alert Rate Guarantee System (Latest Update)
+1. **Proactive Token Sending**: Bot now guarantees exactly 5 tokens per minute
+   - Pending alerts queue system for tokens that fail initial filters
+   - Automatic sending of queued tokens to meet 5 tokens/minute target
+   - Minute-by-minute tracking and reset of alert counters
+   - Priority-based alert sending (high priority tokens first)
+
+2. **Relaxed Safety Filters**: Significantly more lenient to allow diverse token flow
+   - Minimum liquidity: $1K → $100 (more inclusive)
+   - Minimum volume: $100 → $50 (allows newer tokens)
+   - Minimum transactions: 1 → 0 (allows brand new tokens)
+   - Reduced token cooldown: 30 → 10 minutes (more frequent alerts)
+   - Volume and transaction filters now advisory rather than blocking
+
+3. **Enhanced Scanning Frequency**: Faster scanning to find more tokens
+   - Reduced scan delay from 10 seconds to 5 seconds
+   - More frequent checks to build pending alerts queue
+   - Improved token discovery rate across all chains
+
 ### Earlier Updates
 1. **Removed All Fallback Data**: Bot now exclusively uses real Dexscreener API data
    - No hardcoded or fallback tokens
    - Returns empty data on API errors instead of synthetic tokens
    - Added API error notifications to Telegram
-
-2. **Adjusted Safety Filters**: Slightly lowered thresholds to allow more quality tokens
-   - Minimum liquidity: $10K → $1K
-   - Minimum volume: $500 → $100
-   - Minimum transactions: 10 → 1
-   - Still maintains quality standards
 
 ## Recent Changes (July 9, 2025)
 1. **Enhanced Safety Filters**: Added comprehensive filters to prevent low-quality token alerts
