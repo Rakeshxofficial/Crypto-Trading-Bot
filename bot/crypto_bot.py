@@ -334,6 +334,39 @@ class CryptoTradingBot:
             self.logger.debug(f"Error checking token age: {e}")
             return True  # Default to allowing the token
     
+    def _get_token_age(self, token: Dict) -> str:
+        """Get token age as a human-readable string"""
+        try:
+            # Try to get token creation time from various fields
+            created_at = token.get('pairCreatedAt')
+            if not created_at:
+                return "Unknown"
+            
+            # Parse creation time
+            if isinstance(created_at, (int, float)):
+                creation_time = datetime.fromtimestamp(created_at / 1000)
+            else:
+                creation_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            
+            # Calculate age
+            age = datetime.now() - creation_time
+            
+            # Format age as human-readable string
+            if age.days > 0:
+                return f"{age.days} days"
+            elif age.seconds >= 3600:
+                hours = age.seconds // 3600
+                return f"{hours} hours"
+            elif age.seconds >= 60:
+                minutes = age.seconds // 60
+                return f"{minutes} minutes"
+            else:
+                return "Less than 1 minute"
+                
+        except Exception as e:
+            self.logger.debug(f"Error calculating token age: {e}")
+            return "Unknown"
+    
     async def _send_trading_alert(self, token: Dict, chain: str, rug_check_result: Dict) -> bool:
         """Send trading alert via Telegram"""
         try:
@@ -349,8 +382,9 @@ class CryptoTradingBot:
             liquidity_usd = token.get('liquidity', {}).get('usd', 0)
             market_cap = token.get('fdv', 0) or token.get('marketCap', 0)
             
-            # Calculate risk score
+            # Calculate risk score and token age
             risk_score = self._calculate_risk_score(token, rug_check_result)
+            token_age = self._get_token_age(token)
             
             # Create alert message
             alert_data = {
@@ -365,7 +399,8 @@ class CryptoTradingBot:
                 'risk_score': risk_score,
                 'tax_percentage': rug_check_result.get('tax_percentage', 0),
                 'chart_url': token.get('url', ''),
-                'pair_address': token.get('pairAddress', '')
+                'pair_address': token.get('pairAddress', ''),
+                'token_age': token_age
             }
             
             # Send alert - returns True if successful

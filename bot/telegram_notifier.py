@@ -143,6 +143,7 @@ class TelegramNotifier:
             market_cap = float(alert_data.get('market_cap', 0))
             risk_score = float(alert_data.get('risk_score', 0))
             tax_percentage = float(alert_data.get('tax_percentage', 0))
+            token_age = alert_data.get('token_age', 'Unknown')
             
             # Risk level indicator
             risk_emoji = self._get_risk_emoji(risk_score)
@@ -153,6 +154,7 @@ class TelegramNotifier:
 
 📊 <b>{token_name} ({token_symbol})</b>
 🔗 <b>Chain:</b> {chain}
+⏰ <b>Token Age:</b> {token_age}
 💰 <b>Price:</b> ${price_usd:.8f}
 📈 <b>24h Volume:</b> ${volume_24h:,.0f}
 💧 <b>Liquidity:</b> ${liquidity_usd:,.0f}

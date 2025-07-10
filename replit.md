@@ -68,14 +68,19 @@ Preferred communication style: Simple, everyday language.
    - Minute-by-minute tracking and reset of alert counters
    - Priority-based alert sending (high priority tokens first)
 
-2. **Relaxed Safety Filters**: Significantly more lenient to allow diverse token flow
+2. **Enhanced Alert Information**: Added token age display in notifications
+   - Shows token age directly in Telegram alerts (e.g., "2 hours", "15 minutes")
+   - Helps users assess token freshness and trading opportunities
+   - Displays human-readable format for better decision making
+
+3. **Relaxed Safety Filters**: Significantly more lenient to allow diverse token flow
    - Minimum liquidity: $1K → $100 (more inclusive)
    - Minimum volume: $100 → $50 (allows newer tokens)
    - Minimum transactions: 1 → 0 (allows brand new tokens)
    - Reduced token cooldown: 30 → 10 minutes (more frequent alerts)
    - Volume and transaction filters now advisory rather than blocking
 
-3. **Enhanced Scanning Frequency**: Faster scanning to find more tokens
+4. **Enhanced Scanning Frequency**: Faster scanning to find more tokens
    - Reduced scan delay from 10 seconds to 5 seconds
    - More frequent checks to build pending alerts queue
    - Improved token discovery rate across all chains
