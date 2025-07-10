@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
    - **Market Cap**: Minimum $50K (very inclusive, configurable via config.yaml)
    - **Volume**: Minimum $100 24h volume (very inclusive, configurable)
    - **Liquidity**: Minimum $1K liquidity (very inclusive, configurable)
-   - **Token Holders**: Minimum 10 holders (very inclusive, configurable)
+   - **Token Holders**: Minimum 100 holders (back to strict filtering, configurable)
    - **Token Age**: Any age is fine (even 1 hour old tokens accepted)
 
 2. **Added Status Classification System**: 5-tier risk assessment based on price returns
