@@ -43,15 +43,18 @@ class DexscreenerAPI:
                     if response.status == 200:
                         data = await response.json()
                         pairs = data.get('pairs', [])
-                        all_pairs.extend(pairs[:50])  # Get up to 50 tokens
+                        all_pairs.extend(pairs[:30])  # Get up to 30 tokens from main endpoint
                         self.logger.info(f"Retrieved {len(pairs)} pairs from chain endpoint for {chain}")
             except Exception as e:
                 self.logger.debug(f"Error fetching from chain endpoint: {e}")
             
-            # Also try search queries for additional variety - rotate queries to get different tokens
+            # Use time-based rotation to get different tokens each scan
             import random
+            import time
+            
+            # Extended list of search queries for maximum token variety
             all_queries = [
-                f"{self.base_url}/dex/search?q=new%20{chain}",
+                f"{self.base_url}/dex/search?q=new",
                 f"{self.base_url}/dex/search?q=moon",
                 f"{self.base_url}/dex/search?q=gem",
                 f"{self.base_url}/dex/search?q=token",
@@ -66,10 +69,36 @@ class DexscreenerAPI:
                 f"{self.base_url}/dex/search?q=safe",
                 f"{self.base_url}/dex/search?q=rocket",
                 f"{self.base_url}/dex/search?q=diamond",
-                f"{self.base_url}/dex/search?q=gold"
+                f"{self.base_url}/dex/search?q=gold",
+                f"{self.base_url}/dex/search?q=bull",
+                f"{self.base_url}/dex/search?q=bear",
+                f"{self.base_url}/dex/search?q=pump",
+                f"{self.base_url}/dex/search?q=base",
+                f"{self.base_url}/dex/search?q=ai",
+                f"{self.base_url}/dex/search?q=meta",
+                f"{self.base_url}/dex/search?q=verse",
+                f"{self.base_url}/dex/search?q=protocol",
+                f"{self.base_url}/dex/search?q=finance",
+                f"{self.base_url}/dex/search?q=dao",
+                f"{self.base_url}/dex/search?q=defi",
+                f"{self.base_url}/dex/search?q=nft",
+                f"{self.base_url}/dex/search?q=gaming",
+                f"{self.base_url}/dex/search?q=eth",
+                f"{self.base_url}/dex/search?q=btc",
+                f"{self.base_url}/dex/search?q=sol",
+                f"{self.base_url}/dex/search?q=chain",
+                f"{self.base_url}/dex/search?q=swap",
+                f"{self.base_url}/dex/search?q=yield",
+                f"{self.base_url}/dex/search?q=farm",
+                f"{self.base_url}/dex/search?q=vault"
             ]
-            # Randomly select 7 queries each time for variety
-            queries = random.sample(all_queries, min(7, len(all_queries)))
+            
+            # Use time-based seed for different results each scan
+            time_seed = int(time.time()) // 60  # Changes every minute
+            random.seed(time_seed + hash(chain))  # Different seed per chain
+            
+            # Randomly select 10 queries each time for maximum variety
+            queries = random.sample(all_queries, min(10, len(all_queries)))
             
             for query_url in queries:
                 try:
@@ -78,12 +107,15 @@ class DexscreenerAPI:
                             data = await response.json()
                             pairs = data.get('pairs', [])
                             
-                            # Filter by chain and avoid duplicates
+                            # Filter by chain and avoid duplicates, limit per query
                             seen_addresses = {p.get('baseToken', {}).get('address') for p in all_pairs}
+                            added_count = 0
                             for pair in pairs:
                                 if (pair.get('chainId') == chain_id and 
-                                    pair.get('baseToken', {}).get('address') not in seen_addresses):
+                                    pair.get('baseToken', {}).get('address') not in seen_addresses and
+                                    added_count < 15):  # Limit to 15 per query for variety
                                     all_pairs.append(pair)
+                                    added_count += 1
                 except:
                     continue
             
