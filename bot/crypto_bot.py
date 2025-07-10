@@ -92,6 +92,22 @@ class CryptoTradingBot:
                 # Log scan completion
                 self.logger.info(f"Completed scan cycle for {len(self.config.supported_chains)} chains")
                 
+                # Send periodic status update every 300 scans (about 50 minutes)
+                if scan_count % 300 == 0:
+                    await self.telegram_notifier.send_alert({
+                        'token_name': '🤖 Status Update',
+                        'token_symbol': 'BOT',
+                        'token_address': 'N/A',
+                        'chain': 'system',
+                        'price_usd': 0,
+                        'volume_24h': 0,
+                        'liquidity_usd': 0,
+                        'market_cap': 0,
+                        'risk_score': 0,
+                        'tax_percentage': 0,
+                        'message': f'Bot is active! Scanned {scan_count} cycles. Working perfectly to find quality tokens for you.'
+                    })
+                
                 # Wait before next scan
                 await asyncio.sleep(self.config.request_delay_seconds * 10)
                 

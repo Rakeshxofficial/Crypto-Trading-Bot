@@ -84,6 +84,9 @@ class TelegramNotifier:
     def _format_alert_message(self, alert_data: Dict) -> str:
         """Format the alert message for Telegram"""
         try:
+            # Check if this is a status update message
+            if 'message' in alert_data:
+                return f"📢 <b>{alert_data['token_name']}</b>\n\n{alert_data['message']}"
             # Extract data and ensure proper types
             token_name = alert_data.get('token_name', 'Unknown')
             token_symbol = alert_data.get('token_symbol', 'Unknown')
@@ -258,9 +261,11 @@ The bot will automatically send you alerts when it finds promising tokens!
 ⏰ <b>Last Updated:</b> Just now
 
 <b>Current Settings:</b>
-• Min Token Age: 1 minute
+• Min Token Age: 5 minutes
 • Max Tax: 10%
-• Min Liquidity: $10,000
+• Min Liquidity: $3,000
+• Min Volume: $250
+• Min Transactions: 5
 
 ✅ Bot is running normally!
 """

@@ -22,7 +22,7 @@ class Config:
     min_market_cap: float = 10_000  # $10K minimum market cap
     min_token_age_minutes: int = 5  # Tokens must be at least 5 minutes old
     max_tax_percentage: float = 10.0
-    min_liquidity_usd: float = 5_000  # $5K minimum liquidity
+    min_liquidity_usd: float = 3_000  # $3K minimum liquidity (lowered to allow more tokens)
     min_volume_24h: float = 250  # $250 minimum 24h volume (lowered to allow more tokens)
     min_unique_transactions: int = 5  # Minimum 5 unique buys in last hour (lowered to allow more tokens)
     volume_to_mcap_ratio_threshold: float = 0.1
