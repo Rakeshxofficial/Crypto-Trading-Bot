@@ -165,8 +165,8 @@ class CryptoTradingBot:
             # Skip if already processed recently (check database for recent alerts)
             token_key = f"{chain}:{token_address}"
             
-            # Check if we sent an alert for this token in the last 60 minutes to prevent duplicates
-            recent_alert = await self.database.check_recent_alert(token_address, chain, minutes=60)
+            # Check if we sent an alert for this token in the last 30 minutes to prevent duplicates (reduced from 60)
+            recent_alert = await self.database.check_recent_alert(token_address, chain, minutes=30)
             if recent_alert:
                 self.logger.info(f"Skipping {token_name} - alert already sent {recent_alert:.0f} minutes ago")
                 return
@@ -222,7 +222,7 @@ class CryptoTradingBot:
             
             # 1. Minimum Liquidity Filter
             if liquidity_usd < self.config.min_liquidity_usd:
-                self.logger.debug(f"Failed liquidity filter: ${liquidity_usd:.2f} < ${self.config.min_liquidity_usd}")
+                self.logger.info(f"Failed liquidity filter for {token.get('baseToken', {}).get('name', 'Unknown')}: ${liquidity_usd:.2f} < ${self.config.min_liquidity_usd}")
                 return False
             
             # 2. Minimum Market Cap (already checked in filter_by_market_cap, but double-check)
@@ -232,7 +232,7 @@ class CryptoTradingBot:
             
             # 3. Minimum 24h Volume
             if volume_24h < self.config.min_volume_24h:
-                self.logger.debug(f"Failed volume filter: ${volume_24h:.2f} < ${self.config.min_volume_24h}")
+                self.logger.info(f"Failed volume filter for {token.get('baseToken', {}).get('name', 'Unknown')}: ${volume_24h:.2f} < ${self.config.min_volume_24h}")
                 return False
             
             # 4. Minimum Unique Transactions
@@ -241,19 +241,19 @@ class CryptoTradingBot:
             total_txns = buys_1h + sells_1h
             
             if buys_1h < self.config.min_unique_transactions:
-                self.logger.debug(f"Failed transaction filter: {buys_1h} buys < {self.config.min_unique_transactions}")
+                self.logger.info(f"Failed transaction filter for {token.get('baseToken', {}).get('name', 'Unknown')}: {buys_1h} buys < {self.config.min_unique_transactions}")
                 return False
             
-            # 5. Flag tokens with only 1 buyer/seller (suspicious)
-            if buys_1h <= 1 or sells_1h == 0:
-                self.logger.debug(f"Suspicious transaction pattern: {buys_1h} buys, {sells_1h} sells")
+            # 5. Flag tokens with only 1 buyer/seller (suspicious) - RELAXED
+            if buys_1h == 0:  # Only block if NO buys at all
+                self.logger.debug(f"No buy transactions in last hour")
                 return False
             
-            # 6. Check for reasonable buy/sell ratio (avoid pump schemes)
+            # 6. Check for reasonable buy/sell ratio (avoid pump schemes) - RELAXED
             if sells_1h > 0:
                 buy_sell_ratio = buys_1h / sells_1h
-                if buy_sell_ratio > 10 or buy_sell_ratio < 0.1:  # Too one-sided
-                    self.logger.debug(f"Suspicious buy/sell ratio: {buy_sell_ratio:.2f}")
+                if buy_sell_ratio > 20:  # Only block extreme cases (was 10)
+                    self.logger.debug(f"Extremely suspicious buy/sell ratio: {buy_sell_ratio:.2f}")
                     return False
             
             return True
