@@ -328,3 +328,26 @@ Please check the bot logs for more details.
             
         except Exception as e:
             self.logger.error(f"Error sending error alert: {e}")
+            
+    async def send_api_error(self, api_name: str, error_details: str):
+        """Send API error notification"""
+        try:
+            message = f"""
+⚠️ <b>API ERROR DETECTED</b> ⚠️
+
+<b>API:</b> {api_name}
+<b>Error:</b> {error_details}
+<b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+The bot is unable to fetch token data. Please check:
+- API availability
+- Rate limits
+- Network connectivity
+"""
+            await self.bot.send_message(
+                chat_id=self.config.telegram_chat_id,
+                text=message.strip(),
+                parse_mode='HTML'
+            )
+        except Exception as e:
+            self.logger.error(f"Error sending API error alert: {e}")

@@ -23,6 +23,17 @@ Preferred communication style: Simple, everyday language.
 - **Rate Limiting**: Built-in rate limiting to respect API quotas
 - **Error Handling**: Comprehensive logging and graceful error handling throughout
 
+## Recent Changes (July 10, 2025)
+1. **Removed All Fallback Data**: Bot now exclusively uses real Dexscreener API data
+   - No hardcoded or fallback tokens
+   - Returns empty data on API errors instead of synthetic tokens
+   - Added API error notifications to Telegram
+
+2. **Adjusted Safety Filters**: Slightly lowered thresholds to allow more quality tokens
+   - Minimum volume: $500 → $250
+   - Minimum transactions: 10 → 5
+   - Still maintains high quality standards
+
 ## Recent Changes (July 9, 2025)
 1. **Enhanced Safety Filters**: Added comprehensive filters to prevent low-quality token alerts
    - Minimum $5,000 liquidity requirement

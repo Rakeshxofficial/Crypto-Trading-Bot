@@ -82,10 +82,12 @@ class DexscreenerAPI:
                     return all_pairs
                 else:
                     self.logger.error(f"Dexscreener API error: {response.status}")
-                    return all_pairs
+                    # Return empty list on error - NO FALLBACK DATA
+                    return []
                     
         except Exception as e:
             self.logger.error(f"Error fetching tokens from Dexscreener: {e}")
+            # Return empty list on error - NO FALLBACK DATA
             return []
     
     def _get_chain_id(self, chain: str) -> str:
