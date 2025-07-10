@@ -551,6 +551,18 @@ class CryptoTradingBot:
             if isinstance(change_24h, (int, float)) and abs(change_24h) > 100:
                 change_24h = change_24h / 100
             
+            # CRITICAL RUG PULL DETECTION: Volume > Market Cap indicates rug pull
+            if volume_24h > 0 and market_cap > 0 and volume_24h > market_cap:
+                return {
+                    'status': 'Ultra Risk – Not Recommended (Rug Pull Coin)',
+                    'emoji': '⚠️',
+                    'price_changes': {
+                        '1h': change_1h,
+                        '6h': change_6h,
+                        '24h': change_24h
+                    }
+                }
+            
             # Status Logic Implementation
             # All returns negative = Ultra Risk
             if change_1h < 0 and change_6h < 0 and change_24h < 0:

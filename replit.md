@@ -40,6 +40,12 @@ Preferred communication style: Simple, everyday language.
    - Search 15 specific trending tokens per scan for maximum hit rate
    - Zero tolerance duplicate prevention still active
 
+4. **Rug Pull Detection Enhancement (Latest - 15:47)**:
+   - **Critical Rule**: When 24h volume > market cap → automatic "⚠️ Ultra Risk – Not Recommended (Rug Pull Coin)" status
+   - **Detection Logic**: High volume relative to market cap indicates wash trading or rug pull activity
+   - **Priority Classification**: Rug pull detection runs before all other status calculations
+   - **User Safety**: Protects users from obvious rug pull schemes with clear warning labels
+
 ## Recent Changes (July 10, 2025)
 
 ### Comprehensive Name-Based Duplicate Prevention System (Latest Update)
