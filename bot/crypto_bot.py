@@ -38,6 +38,7 @@ class CryptoTradingBot:
         # Bot state
         self.is_running = False
         self.processed_tokens = set()
+        self.processed_token_names = set()  # Track token names separately for stricter filtering
         self.last_scan_time = {}
         self.alerts_sent_this_minute = 0
         self.last_minute_reset = datetime.now().replace(second=0, microsecond=0)
@@ -207,8 +208,18 @@ class CryptoTradingBot:
             # Check both by token address AND by token name to prevent duplicates
             token_key = f"{chain}:{token_address}"
             
-            # DUPLICATE PREVENTION - Check if we sent an alert for this token recently
-            # Check if we sent an alert for this token recently (by address)
+            # COMPREHENSIVE DUPLICATE PREVENTION SYSTEM
+            
+            # 1. Normalize token name for better matching (case-insensitive, remove extra spaces)
+            normalized_name = token_name.strip().lower()
+            name_key = f"{chain}:{normalized_name}"
+            
+            # 2. Check in-memory processed names first (fastest check)
+            if name_key in self.processed_token_names:
+                self.logger.info(f"Skipping {token_name} - name already processed in memory")
+                return
+            
+            # 3. Check if we sent an alert for this token recently (by address)
             recent_alert = await self.database.check_recent_alert(
                 token_address, chain, minutes=24*60  # 24 hours to prevent any duplicates
             )
@@ -216,7 +227,7 @@ class CryptoTradingBot:
                 self.logger.info(f"Skipping {token_name} - alert already sent {recent_alert:.0f} minutes ago")
                 return
             
-            # Additional check by token name to prevent same token with different addresses
+            # 4. Check by token name to prevent same token with different addresses
             recent_name_alert = await self.database.check_recent_alert_by_name(
                 token_name, chain, minutes=24*60  # 24 hours to prevent any duplicates
             )
@@ -272,6 +283,7 @@ class CryptoTradingBot:
             if alert_sent:
                 # Mark as processed with timestamp
                 self.processed_tokens.add(token_key)
+                self.processed_token_names.add(name_key)  # Also track by normalized name
                 self.last_scan_time[token_key] = datetime.now()
             
             # Log successful check

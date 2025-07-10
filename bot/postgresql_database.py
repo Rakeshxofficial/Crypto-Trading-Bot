@@ -324,13 +324,13 @@ class PostgreSQLDatabase:
             return None
     
     async def check_recent_alert_by_name(self, token_name: str, chain: str, minutes: int = 30) -> Optional[int]:
-        """Check if alert was sent for this token name recently"""
+        """Check if alert was sent for this token name recently (case-insensitive)"""
         try:
             async with self.pool.acquire() as conn:
                 result = await conn.fetchrow("""
                     SELECT EXTRACT(EPOCH FROM (NOW() - timestamp))/60 as minutes_ago
                     FROM alerts 
-                    WHERE token_name = $1 AND chain = $2 
+                    WHERE LOWER(TRIM(token_name)) = LOWER(TRIM($1)) AND chain = $2 
                     AND timestamp > NOW() - INTERVAL '{} minutes'
                     ORDER BY timestamp DESC
                     LIMIT 1

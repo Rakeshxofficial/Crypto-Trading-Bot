@@ -25,13 +25,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
-### Duplicate Prevention System (Latest Update)
-1. **Implemented Comprehensive Deduplication**: Added 24-hour duplicate prevention system
-   - **Database-level checking**: Checks alerts table for recent token alerts by address
-   - **Name-based duplicate prevention**: Prevents same token name alerts even with different addresses  
-   - **24-hour cooldown**: Each token can only be sent once per 24 hours
-   - **Dual-layer protection**: Both crypto_bot.py and telegram_notifier.py check for duplicates
-   - **Logs show skipping**: Clear logging when tokens are skipped due to previous alerts
+### Comprehensive Name-Based Duplicate Prevention System (Latest Update)
+1. **Zero-Tolerance Duplicate Prevention**: Implemented comprehensive multi-layer system
+   - **Case-insensitive name matching**: Database checks with LOWER(TRIM()) to catch all name variations
+   - **In-memory tracking**: Fast normalized name tracking (chain:lowercase_name) for immediate detection
+   - **Database-level address checking**: Prevents same token address alerts for 24 hours
+   - **Database-level name checking**: Prevents same token name alerts for 24 hours (case-insensitive)
+   - **Triple-layer protection**: Memory check, address check, and name check ensure zero duplicates
+   - **Perfect logging**: Shows "Skipping [token] - name already processed" for all duplicate attempts
 
 ### Comprehensive Risk Classification System with Inclusive Filtering
 1. **Implemented Inclusive Filters**: Added basic safety filters with comprehensive risk transparency
