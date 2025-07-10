@@ -1,0 +1,45 @@
+# Crypto Trading Bot Configuration
+
+# Trading Filters
+filters:
+  min_token_holders: 100        # Minimum number of token holders required
+  min_market_cap: 0             # Minimum market cap (0 = no limit)
+  max_market_cap: 100000000000  # Maximum market cap ($100B = virtually unlimited)
+  min_liquidity_usd: 0          # Minimum liquidity in USD
+  min_volume_24h: 0             # Minimum 24h volume
+  min_token_age_minutes: 0      # Minimum token age in minutes
+  max_tax_percentage: 100.0     # Maximum tax percentage allowed
+
+# Alert Settings
+alerts:
+  telegram_rate_limit_per_minute: 1000  # Maximum alerts per minute
+  token_cooldown_minutes: 0             # Cooldown between same token alerts
+  retry_on_error: true                  # Retry failed alerts
+  max_retry_attempts: 3                 # Maximum retry attempts
+  retry_delay_seconds: 2.0             # Initial retry delay
+
+# Supported Blockchains
+chains:
+  - solana
+  - bsc
+  - ethereum
+
+# API Rate Limiting
+rate_limiting:
+  api_calls_per_minute: 60
+  request_delay_seconds: 1.0
+
+# Database
+database:
+  use_postgresql: true
+  path: "crypto_bot.db"
+
+# Dashboard
+dashboard:
+  host: "0.0.0.0"
+  port: 5000
+
+# Logging
+logging:
+  level: "INFO"
+  file: "crypto_bot.log"

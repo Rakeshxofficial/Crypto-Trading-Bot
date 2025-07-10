@@ -242,19 +242,11 @@ class CryptoTradingBot:
             #     await self._log_token_check(token, chain, "rug_risk", rug_check_result)
             #     return
             
-            # UNLIMITED MODE - No safety filters or fake volume checks, send all tokens
-            # Apply additional safety filters
-            # if not self._passes_safety_filters(token):
-            #     self.logger.debug(f"Token {token_name} ({token_symbol}) failed safety filters, but adding to pending queue")
-            #     # Add to pending alerts queue instead of skipping
-            #     self.pending_alerts.append({
-            #         'token': token,
-            #         'chain': chain,
-            #         'rug_check_result': rug_check_result,
-            #         'priority': 'low'
-            #     })
-            #     await self._log_token_check(token, chain, "safety_filter_failed", {})
-            #     return
+            # Apply token holder filter (minimum 100 holders)
+            if not self._passes_safety_filters(token):
+                self.logger.debug(f"Token {token_name} ({token_symbol}) failed safety filters")
+                await self._log_token_check(token, chain, "holder_filter_failed", {})
+                return
             
             # Check for fake volume
             # if self.volume_filter.is_fake_volume(token):
@@ -289,8 +281,36 @@ class CryptoTradingBot:
             self.logger.error(f"Error processing token {token.get('baseToken', {}).get('name', 'Unknown')}: {e}")
     
     def _passes_safety_filters(self, token: Dict) -> bool:
-        """Apply comprehensive safety filters to token - UNLIMITED MODE: RETURN TRUE FOR ALL"""
-        return True  # UNLIMITED MODE - No restrictions, send all tokens
+        """Apply comprehensive safety filters to token with token holder check"""
+        try:
+            # Check minimum token holders requirement
+            token_holders_str = self._get_token_holders(token)
+            
+            # Extract numeric value from holder count string
+            if token_holders_str == "Unknown":
+                self.logger.debug(f"Token {token.get('baseToken', {}).get('name', 'Unknown')} has unknown holder count - allowing through")
+                return True  # Allow tokens with unknown holder count
+            
+            # Parse holder count (remove commas and ~ symbol)
+            holder_count = 0
+            try:
+                # Remove formatting characters
+                clean_holders = token_holders_str.replace(',', '').replace('~', '').strip()
+                holder_count = int(clean_holders)
+            except (ValueError, AttributeError):
+                self.logger.debug(f"Could not parse holder count '{token_holders_str}' - allowing through")
+                return True  # Allow if we can't parse the count
+            
+            # Check if holder count meets minimum requirement
+            if holder_count < self.config.min_token_holders:
+                self.logger.info(f"Token {token.get('baseToken', {}).get('name', 'Unknown')} has only {holder_count} holders (minimum: {self.config.min_token_holders}) - skipping")
+                return False
+            
+            return True  # Passed holder count check
+            
+        except Exception as e:
+            self.logger.debug(f"Error in safety filters: {e}")
+            return True  # Default to allowing the token on errors
     
     def _is_token_old_enough(self, token: Dict) -> bool:
         """Check if token is old enough based on configuration"""

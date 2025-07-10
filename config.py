@@ -26,6 +26,7 @@ class Config:
     min_volume_24h: float = 0  # No minimum volume
     min_unique_transactions: int = 0  # No minimum transactions
     volume_to_mcap_ratio_threshold: float = 100.0  # Allow any volume ratio
+    min_token_holders: int = 100  # Minimum token holders required
     
     # Rate Limiting
     api_calls_per_minute: int = 60
@@ -90,6 +91,7 @@ class Config:
                 self.max_tax_percentage = trading_section.getfloat("max_tax_percentage", self.max_tax_percentage)
                 self.min_liquidity_usd = trading_section.getfloat("min_liquidity_usd", self.min_liquidity_usd)
                 self.volume_to_mcap_ratio_threshold = trading_section.getfloat("volume_to_mcap_ratio_threshold", self.volume_to_mcap_ratio_threshold)
+                self.min_token_holders = trading_section.getint("min_token_holders", self.min_token_holders)
             
             # Rate limiting section
             if "rate_limiting" in config_parser:

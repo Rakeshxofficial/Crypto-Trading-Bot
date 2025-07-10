@@ -25,14 +25,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
-### Unlimited Token Mode with UX Improvements (Latest Update)
-1. **Removed All Restrictions**: Bot now configured for unlimited token sending
-   - Removed all cooldown periods (0 minutes)
-   - Removed all safety filters and restrictions
-   - Unlimited alerts per minute (1000 instead of 5)
-   - No token age, rug risk, or volume checks
-   - Send all tokens immediately regardless of quality
-   - Added token holders count to alert messages
+### Unlimited Token Mode with Token Holder Filter (Latest Update)
+1. **Added Token Holder Filter**: Now filters tokens with minimum 100 holders
+   - Minimum 100 token holders required (configurable via config.yaml)
+   - Prevents low-quality tokens with few holders from being sent
+   - Still unlimited alerts per minute for qualifying tokens
+   - No other restrictions (age, rug risk, volume checks still disabled)
+   - Token holders count displayed in all alerts
 
 2. **Enhanced Alert Messages**: Added token holders information
    - Each alert now shows total token holders count
