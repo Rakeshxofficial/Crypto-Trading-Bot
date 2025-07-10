@@ -25,24 +25,31 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
-### Unlimited Token Mode with Token Holder Filter (Latest Update)
-1. **Added Token Holder Filter**: Now filters tokens with minimum 100 holders
-   - Minimum 100 token holders required (configurable via config.yaml)
-   - Prevents low-quality tokens with few holders from being sent
-   - Still unlimited alerts per minute for qualifying tokens
-   - No other restrictions (age, rug risk, volume checks still disabled)
-   - Token holders count displayed in all alerts
+### Comprehensive Risk Classification System (Latest Update)
+1. **Implemented Hard Filters**: Added comprehensive safety filters that all tokens must pass
+   - **Market Cap**: Minimum $20M (configurable via config.yaml)
+   - **Volume**: Minimum $500 24h volume (configurable)
+   - **Liquidity**: Minimum $2K liquidity (configurable)
+   - **Token Holders**: Minimum 100 holders (configurable)
+   - **Token Age**: Any age is fine (even 1 hour old tokens accepted)
 
-2. **Enhanced Alert Messages**: Added token holders information
-   - Each alert now shows total token holders count
-   - Displays as exact number when available or estimated count
-   - Format: "👥 Token Holders: 1,234" or "👥 Token Holders: ~50"
+2. **Added Status Classification System**: 5-tier risk assessment based on price returns
+   - **⚠️ Ultra Risk – Not Recommended**: All returns (1h, 6h, 24h) are negative
+   - **⚠️ Medium Risk**: 1h return ≥+1% but 6h & 24h not positive
+   - **🟡 Mini Gem**: 1h ≥+1% and 6h ≥+1%, but 24h not positive
+   - **🟢 Real Gem – Low Risk**: 1h, 6h, and 24h all meet positive thresholds
+   - **💎 Premium Gem (Top Label)**: Same as Real Gem + Market Cap ≥$100M & Volume >$1M
 
-3. **Improved Telegram UX**: Selective button configuration to prevent accidental dismissal
-   - Removed problematic "Copy Address" and "Dismiss" buttons that were causing message deletion
-   - Token address now displayed as plain text: "🧾 Token Address: [address]"
-   - Kept essential trading buttons: "Buy on Raydium/PancakeSwap/Uniswap", "DexTools", "View Chart"
-   - Users can now trade immediately without risking message deletion
+3. **Enhanced Alert Messages**: Added comprehensive price change tracking
+   - Shows 1hr, 6hr, and 24hr price changes with + or - indicators
+   - Status classification displayed with appropriate emoji and label
+   - Token holders count still displayed in all alerts
+   - Token address shown as copyable text for easy access
+
+4. **Updated Configuration**: New filter thresholds in config.yaml
+   - Price return thresholds: 1hr (±1%), 6hr (±1%), 24hr (≥+5%)
+   - Premium gem criteria: $100M market cap, $1M volume
+   - All parameters configurable for easy adjustment
 
 ### Telegram Channel Configuration (Previous Update)
 1. **Alert Destination Changed**: Successfully updated bot to send alerts to Telegram channel

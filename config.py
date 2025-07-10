@@ -17,16 +17,25 @@ class Config:
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
     
-    # Trading Parameters - NO RESTRICTIONS
+    # Trading Parameters - Updated with comprehensive filters
     max_market_cap: float = 100_000_000_000  # $100B - virtually unlimited
-    min_market_cap: float = 0  # No minimum market cap
-    min_token_age_minutes: int = 0  # No minimum age - send all tokens
+    min_market_cap: float = 20_000_000  # $20M minimum market cap
+    min_token_age_minutes: int = 0  # No minimum age - even 1 hour old is fine
     max_tax_percentage: float = 100.0  # Allow any tax percentage
-    min_liquidity_usd: float = 0  # No minimum liquidity
-    min_volume_24h: float = 0  # No minimum volume
+    min_liquidity_usd: float = 2_000  # $2K minimum liquidity
+    min_volume_24h: float = 500  # $500 minimum 24h volume
     min_unique_transactions: int = 0  # No minimum transactions
     volume_to_mcap_ratio_threshold: float = 100.0  # Allow any volume ratio
     min_token_holders: int = 100  # Minimum token holders required
+    
+    # Price Return Thresholds for Status Classification
+    min_return_1h: float = 1.0  # 1% minimum 1-hour return
+    min_return_6h: float = 1.0  # 1% minimum 6-hour return
+    min_return_24h: float = 5.0  # 5% minimum 24-hour return
+    
+    # Premium Gem Thresholds
+    premium_gem_min_market_cap: float = 100_000_000  # $100M for premium gems
+    premium_gem_min_volume: float = 1_000_000  # $1M volume for premium gems
     
     # Rate Limiting
     api_calls_per_minute: int = 60
@@ -90,8 +99,14 @@ class Config:
                 self.min_token_age_minutes = trading_section.getint("min_token_age_minutes", self.min_token_age_minutes)
                 self.max_tax_percentage = trading_section.getfloat("max_tax_percentage", self.max_tax_percentage)
                 self.min_liquidity_usd = trading_section.getfloat("min_liquidity_usd", self.min_liquidity_usd)
+                self.min_market_cap = trading_section.getfloat("min_market_cap", self.min_market_cap)
                 self.volume_to_mcap_ratio_threshold = trading_section.getfloat("volume_to_mcap_ratio_threshold", self.volume_to_mcap_ratio_threshold)
                 self.min_token_holders = trading_section.getint("min_token_holders", self.min_token_holders)
+                self.min_return_1h = trading_section.getfloat("min_return_1h", self.min_return_1h)
+                self.min_return_6h = trading_section.getfloat("min_return_6h", self.min_return_6h)
+                self.min_return_24h = trading_section.getfloat("min_return_24h", self.min_return_24h)
+                self.premium_gem_min_market_cap = trading_section.getfloat("premium_gem_min_market_cap", self.premium_gem_min_market_cap)
+                self.premium_gem_min_volume = trading_section.getfloat("premium_gem_min_volume", self.premium_gem_min_volume)
             
             # Rate limiting section
             if "rate_limiting" in config_parser:

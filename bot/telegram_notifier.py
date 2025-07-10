@@ -152,6 +152,16 @@ class TelegramNotifier:
             # Get token address from alert data
             token_address = alert_data.get('token_address', 'Unknown')
             
+            # Extract price changes if available
+            price_changes = alert_data.get('price_changes', {})
+            change_1h = price_changes.get('1h', 0)
+            change_6h = price_changes.get('6h', 0)
+            change_24h = price_changes.get('24h', 0)
+            
+            # Get status information
+            status = alert_data.get('status', 'Medium Risk')
+            status_emoji = alert_data.get('status_emoji', '⚠️')
+            
             # Format message with token address displayed as text
             message = f"""
 🚨 <b>CRYPTO TRADING ALERT</b> 🚨
@@ -166,10 +176,15 @@ class TelegramNotifier:
 💧 <b>Liquidity:</b> ${liquidity_usd:,.0f}
 🏦 <b>Market Cap:</b> ${market_cap:,.0f}
 
+📊 <b>Price Changes:</b>
+🕐 1hr: {change_1h:+.1f}%
+🕕 6hr: {change_6h:+.1f}%
+🕙 24hr: {change_24h:+.1f}%
+
 {risk_emoji} <b>Risk Score:</b> {risk_score:.1f}/100
 🏷️ <b>Tax:</b> {tax_percentage:.1f}%
 
-⚠️ <b>Status:</b> {"🔴 HIGH RISK" if risk_score > 70 else "🟡 MEDIUM RISK" if risk_score > 40 else "🟢 LOW RISK"}
+⚠️ <b>Status:</b> {status_emoji} {status}
 """
             
             return message.strip()

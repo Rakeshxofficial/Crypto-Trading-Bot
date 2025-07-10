@@ -3,12 +3,21 @@
 # Trading Filters
 filters:
   min_token_holders: 100        # Minimum number of token holders required
-  min_market_cap: 0             # Minimum market cap (0 = no limit)
+  min_market_cap: 20000000      # Minimum market cap ($20M)
   max_market_cap: 100000000000  # Maximum market cap ($100B = virtually unlimited)
-  min_liquidity_usd: 0          # Minimum liquidity in USD
-  min_volume_24h: 0             # Minimum 24h volume
-  min_token_age_minutes: 0      # Minimum token age in minutes
+  min_liquidity_usd: 2000       # Minimum liquidity in USD ($2K)
+  min_volume_24h: 500           # Minimum 24h volume ($500)
+  min_token_age_minutes: 0      # Minimum token age in minutes (any age is fine)
   max_tax_percentage: 100.0     # Maximum tax percentage allowed
+  
+  # Price Return Thresholds for Status Classification
+  min_return_1h: 1.0            # 1% minimum 1-hour return
+  min_return_6h: 1.0            # 1% minimum 6-hour return
+  min_return_24h: 5.0           # 5% minimum 24-hour return
+  
+  # Premium Gem Thresholds
+  premium_gem_min_market_cap: 100000000   # $100M for premium gems
+  premium_gem_min_volume: 1000000         # $1M volume for premium gems
 
 # Alert Settings
 alerts:

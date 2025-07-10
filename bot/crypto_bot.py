@@ -130,7 +130,7 @@ class CryptoTradingBot:
                         'market_cap': 0,
                         'risk_score': 0,
                         'tax_percentage': 0,
-                        'message': f'No new tokens found in last 3 minutes. Reason: All discovered tokens are in cooldown period. Bot is working but waiting for fresh tokens from API.'
+                        'message': f'No new tokens found in last 3 minutes. Reason: All discovered tokens fail the comprehensive hard filters (Market Cap ≥${self.config.min_market_cap:,.0f}, Volume ≥${self.config.min_volume_24h:,.0f}, Liquidity ≥${self.config.min_liquidity_usd:,.0f}, Holders ≥{self.config.min_token_holders}). Bot is working but waiting for high-quality tokens from API.'
                     })
                 
                 # Send periodic status update every 300 scans (about 50 minutes)
@@ -149,8 +149,8 @@ class CryptoTradingBot:
                         'message': f'Bot is active! Scanned {scan_count} cycles. Working perfectly to find quality tokens for you.'
                     })
                 
-                # Wait before next scan (reduced for more frequent scanning)
-                await asyncio.sleep(self.config.request_delay_seconds * 3)
+                # Wait before next scan (increased to reduce API rate limiting)
+                await asyncio.sleep(self.config.request_delay_seconds * 5)
                 
             except Exception as e:
                 self.logger.error(f"Error in monitoring loop: {e}")
@@ -173,7 +173,7 @@ class CryptoTradingBot:
             
             # Filter tokens by market cap
             filtered_tokens = self._filter_by_market_cap(tokens)
-            self.logger.info(f"Found {len(filtered_tokens)} tokens under ${self.config.max_market_cap:,.0f} market cap on {chain}")
+            self.logger.info(f"Found {len(filtered_tokens)} tokens with market cap between ${self.config.min_market_cap:,.0f} - ${self.config.max_market_cap:,.0f} on {chain}")
             
             # Process each token
             for token in filtered_tokens:
@@ -242,10 +242,10 @@ class CryptoTradingBot:
             #     await self._log_token_check(token, chain, "rug_risk", rug_check_result)
             #     return
             
-            # Apply token holder filter (minimum 100 holders)
+            # Apply comprehensive safety filters (hard filters)
             if not self._passes_safety_filters(token):
                 self.logger.debug(f"Token {token_name} ({token_symbol}) failed safety filters")
-                await self._log_token_check(token, chain, "holder_filter_failed", {})
+                await self._log_token_check(token, chain, "hard_filter_failed", {})
                 return
             
             # Check for fake volume
@@ -281,32 +281,42 @@ class CryptoTradingBot:
             self.logger.error(f"Error processing token {token.get('baseToken', {}).get('name', 'Unknown')}: {e}")
     
     def _passes_safety_filters(self, token: Dict) -> bool:
-        """Apply comprehensive safety filters to token with token holder check"""
+        """Apply comprehensive safety filters to token - Hard filters that must pass"""
         try:
-            # Check minimum token holders requirement
+            token_name = token.get('baseToken', {}).get('name', 'Unknown')
+            
+            # 1. Check minimum token holders requirement
             token_holders_str = self._get_token_holders(token)
+            if token_holders_str != "Unknown":
+                try:
+                    clean_holders = token_holders_str.replace(',', '').replace('~', '').strip()
+                    holder_count = int(clean_holders)
+                    if holder_count < self.config.min_token_holders:
+                        self.logger.info(f"Token {token_name} has only {holder_count} holders (minimum: {self.config.min_token_holders}) - skipping")
+                        return False
+                except (ValueError, AttributeError):
+                    pass  # Allow if we can't parse the count
             
-            # Extract numeric value from holder count string
-            if token_holders_str == "Unknown":
-                self.logger.debug(f"Token {token.get('baseToken', {}).get('name', 'Unknown')} has unknown holder count - allowing through")
-                return True  # Allow tokens with unknown holder count
-            
-            # Parse holder count (remove commas and ~ symbol)
-            holder_count = 0
-            try:
-                # Remove formatting characters
-                clean_holders = token_holders_str.replace(',', '').replace('~', '').strip()
-                holder_count = int(clean_holders)
-            except (ValueError, AttributeError):
-                self.logger.debug(f"Could not parse holder count '{token_holders_str}' - allowing through")
-                return True  # Allow if we can't parse the count
-            
-            # Check if holder count meets minimum requirement
-            if holder_count < self.config.min_token_holders:
-                self.logger.info(f"Token {token.get('baseToken', {}).get('name', 'Unknown')} has only {holder_count} holders (minimum: {self.config.min_token_holders}) - skipping")
+            # 2. Check minimum market cap requirement ($20M)
+            market_cap = token.get('marketCap', 0)
+            if market_cap < self.config.min_market_cap:
+                self.logger.info(f"Token {token_name} has market cap ${market_cap:,.0f} (minimum: ${self.config.min_market_cap:,.0f}) - skipping")
                 return False
             
-            return True  # Passed holder count check
+            # 3. Check minimum 24h volume requirement ($500)
+            volume_24h = token.get('volume', {}).get('h24', 0)
+            if volume_24h < self.config.min_volume_24h:
+                self.logger.info(f"Token {token_name} has 24h volume ${volume_24h:,.0f} (minimum: ${self.config.min_volume_24h:,.0f}) - skipping")
+                return False
+            
+            # 4. Check minimum liquidity requirement ($2K)
+            liquidity = token.get('liquidity', {}).get('usd', 0)
+            if liquidity < self.config.min_liquidity_usd:
+                self.logger.info(f"Token {token_name} has liquidity ${liquidity:,.0f} (minimum: ${self.config.min_liquidity_usd:,.0f}) - skipping")
+                return False
+            
+            # All hard filters passed
+            return True
             
         except Exception as e:
             self.logger.debug(f"Error in safety filters: {e}")
@@ -419,6 +429,9 @@ class CryptoTradingBot:
             token_age = self._get_token_age(token)
             token_holders = self._get_token_holders(token)
             
+            # Calculate status based on price returns
+            status_info = self._calculate_token_status(token, market_cap, volume_24h)
+            
             # Create alert message
             alert_data = {
                 'token_name': token_name,
@@ -434,7 +447,10 @@ class CryptoTradingBot:
                 'chart_url': token.get('url', ''),
                 'pair_address': token.get('pairAddress', ''),
                 'token_age': token_age,
-                'token_holders': token_holders
+                'token_holders': token_holders,
+                'status': status_info['status'],
+                'status_emoji': status_info['emoji'],
+                'price_changes': status_info['price_changes']
             }
             
             # Send alert - returns True if successful
@@ -505,6 +521,116 @@ class CryptoTradingBot:
             risk_score += 50
         
         return min(risk_score, 100.0)
+    
+    def _calculate_token_status(self, token: Dict, market_cap: float, volume_24h: float) -> Dict:
+        """Calculate token status based on price returns and market metrics"""
+        try:
+            # Extract price change data
+            price_changes = token.get('priceChange', {})
+            change_1h = price_changes.get('h1', 0)
+            change_6h = price_changes.get('h6', 0)
+            change_24h = price_changes.get('h24', 0)
+            
+            # Convert to percentages if needed
+            if isinstance(change_1h, (int, float)) and abs(change_1h) > 100:
+                change_1h = change_1h / 100
+            if isinstance(change_6h, (int, float)) and abs(change_6h) > 100:
+                change_6h = change_6h / 100
+            if isinstance(change_24h, (int, float)) and abs(change_24h) > 100:
+                change_24h = change_24h / 100
+            
+            # Status Logic Implementation
+            # All returns negative = Ultra Risk
+            if change_1h < 0 and change_6h < 0 and change_24h < 0:
+                return {
+                    'status': 'Ultra Risk – Not Recommended',
+                    'emoji': '⚠️',
+                    'price_changes': {
+                        '1h': change_1h,
+                        '6h': change_6h,
+                        '24h': change_24h
+                    }
+                }
+            
+            # Check for Premium Gem first (highest priority)
+            if (change_1h >= self.config.min_return_1h and 
+                change_6h >= self.config.min_return_6h and 
+                change_24h >= self.config.min_return_24h and
+                market_cap >= self.config.premium_gem_min_market_cap and
+                volume_24h >= self.config.premium_gem_min_volume):
+                return {
+                    'status': 'Premium Gem (Top Label)',
+                    'emoji': '💎',
+                    'price_changes': {
+                        '1h': change_1h,
+                        '6h': change_6h,
+                        '24h': change_24h
+                    }
+                }
+            
+            # Real Gem - Low Risk
+            if (change_1h >= self.config.min_return_1h and 
+                change_6h >= self.config.min_return_6h and 
+                change_24h >= self.config.min_return_24h):
+                return {
+                    'status': 'Real Gem – Low Risk',
+                    'emoji': '🟢',
+                    'price_changes': {
+                        '1h': change_1h,
+                        '6h': change_6h,
+                        '24h': change_24h
+                    }
+                }
+            
+            # Mini Gem
+            if (change_1h >= self.config.min_return_1h and 
+                change_6h >= self.config.min_return_6h and 
+                change_24h < self.config.min_return_24h):
+                return {
+                    'status': 'Mini Gem',
+                    'emoji': '🟡',
+                    'price_changes': {
+                        '1h': change_1h,
+                        '6h': change_6h,
+                        '24h': change_24h
+                    }
+                }
+            
+            # Medium Risk
+            if (change_1h >= self.config.min_return_1h and 
+                (change_6h < self.config.min_return_6h or change_24h < 0)):
+                return {
+                    'status': 'Medium Risk',
+                    'emoji': '⚠️',
+                    'price_changes': {
+                        '1h': change_1h,
+                        '6h': change_6h,
+                        '24h': change_24h
+                    }
+                }
+            
+            # Default to Medium Risk if no other conditions met
+            return {
+                'status': 'Medium Risk',
+                'emoji': '⚠️',
+                'price_changes': {
+                    '1h': change_1h,
+                    '6h': change_6h,
+                    '24h': change_24h
+                }
+            }
+            
+        except Exception as e:
+            self.logger.debug(f"Error calculating token status: {e}")
+            return {
+                'status': 'Medium Risk',
+                'emoji': '⚠️',
+                'price_changes': {
+                    '1h': 0,
+                    '6h': 0,
+                    '24h': 0
+                }
+            }
     
     async def _log_token_check(self, token: Dict, chain: str, status: str, check_result: Dict):
         """Log token check to database"""
