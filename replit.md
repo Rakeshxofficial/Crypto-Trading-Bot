@@ -25,6 +25,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
+### Telegram Channel Configuration (Latest Update)
+1. **Alert Destination Changed**: Successfully updated bot to send alerts to Telegram channel
+   - Changed from individual user ID to channel ID: -1002767799900
+   - All future crypto token alerts will be sent to "Rich Alert..." channel
+   - Bot restarted and confirmed working with new channel configuration
+
 ### Token Discovery and Diagnostic System (Latest Fix)
 1. **Resolved Token Flow Issue**: Fixed the problem where bot stopped sending alerts
    - Reduced cooldown from 5 → 3 minutes for faster token rotation
