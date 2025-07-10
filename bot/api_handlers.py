@@ -48,16 +48,28 @@ class DexscreenerAPI:
             except Exception as e:
                 self.logger.debug(f"Error fetching from chain endpoint: {e}")
             
-            # Also try search queries for additional variety
-            queries = [
+            # Also try search queries for additional variety - rotate queries to get different tokens
+            import random
+            all_queries = [
                 f"{self.base_url}/dex/search?q=new%20{chain}",
                 f"{self.base_url}/dex/search?q=moon",
                 f"{self.base_url}/dex/search?q=gem",
                 f"{self.base_url}/dex/search?q=token",
                 f"{self.base_url}/dex/search?q=coin",
                 f"{self.base_url}/dex/search?q=doge",
-                f"{self.base_url}/dex/search?q=pepe"
+                f"{self.base_url}/dex/search?q=pepe",
+                f"{self.base_url}/dex/search?q=meme",
+                f"{self.base_url}/dex/search?q=cat",
+                f"{self.base_url}/dex/search?q=dog",
+                f"{self.base_url}/dex/search?q=inu",
+                f"{self.base_url}/dex/search?q=shiba",
+                f"{self.base_url}/dex/search?q=safe",
+                f"{self.base_url}/dex/search?q=rocket",
+                f"{self.base_url}/dex/search?q=diamond",
+                f"{self.base_url}/dex/search?q=gold"
             ]
+            # Randomly select 7 queries each time for variety
+            queries = random.sample(all_queries, min(7, len(all_queries)))
             
             for query_url in queries:
                 try:

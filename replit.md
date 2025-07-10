@@ -25,6 +25,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
+### Token Discovery and Diagnostic System (Latest Fix)
+1. **Resolved Token Flow Issue**: Fixed the problem where bot stopped sending alerts
+   - Reduced cooldown from 5 → 3 minutes for faster token rotation
+   - Implemented randomized search queries (16 different terms) for maximum variety
+   - Added diagnostic messages when no tokens found to explain the situation
+   - Successfully sending fresh tokens: PIKACHU INU, Department Of Governm, etc.
+
+2. **Enhanced API Discovery**: Improved token discovery mechanisms
+   - Random selection of 7 out of 16 search terms each scan for variety
+   - Increased total token retrieval (101 Solana, 51 BSC tokens per scan)
+   - Better rotation prevents getting stuck on same token sets
+
 ### Deployment Configuration (Latest)
 1. **Production-Ready Application**: Created unified app.py for deployment
    - Combines bot and dashboard in single process
@@ -77,20 +89,21 @@ Preferred communication style: Simple, everyday language.
    - Dual-layer checking: by token address AND token name
    - Memory-based tracking in TelegramNotifier with token names
    - Database-based duplicate checking with name validation
-   - Successfully sending diverse tokens: Department Of Governm, Department of Gov Efficiency, No Cash Value, Dogecoin
+   - Successfully sending diverse tokens: PIKACHU INU, Department Of Governm, Department of Gov Efficiency, No Cash Value, Dogecoin
 
 4. **Relaxed Safety Filters**: Significantly more lenient to allow diverse token flow
    - Minimum liquidity: $1K → $100 (more inclusive)
    - Minimum volume: $100 → $50 (allows newer tokens)
    - Minimum transactions: 1 → 0 (allows brand new tokens)
-   - Reduced token cooldown: 30 → 5 minutes (more frequent alerts)
+   - Reduced token cooldown: 30 → 3 minutes (more frequent alerts)
    - Volume and transaction filters now advisory rather than blocking
 
 5. **Enhanced Scanning Frequency**: Faster scanning to find more tokens
    - Reduced scan delay from 10 seconds to 3 seconds
    - More frequent checks to build pending alerts queue
    - Improved token discovery rate across all chains
-   - Added diverse search queries (doge, pepe, token, coin) for better variety
+   - Added randomized search queries (16 different terms) rotating for maximum variety
+   - Diagnostic messages sent when no tokens found (explains why alerts stopped)
 
 ### Earlier Updates
 1. **Removed All Fallback Data**: Bot now exclusively uses real Dexscreener API data

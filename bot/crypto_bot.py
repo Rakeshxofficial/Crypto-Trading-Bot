@@ -117,6 +117,22 @@ class CryptoTradingBot:
                 # Log scan completion
                 self.logger.info(f"Completed scan cycle for {len(self.config.supported_chains)} chains. Alerts sent this minute: {self.alerts_sent_this_minute}/{self.config.alerts_per_minute_target}")
                 
+                # Send diagnostic message if no alerts sent for 5 minutes
+                if self.alerts_sent_this_minute == 0 and scan_count % 60 == 0:  # Every 60 scans (~3 minutes)
+                    await self.telegram_notifier.send_alert({
+                        'token_name': '🔍 Diagnostic Report',
+                        'token_symbol': 'DIAG',
+                        'token_address': 'N/A',
+                        'chain': 'system',
+                        'price_usd': 0,
+                        'volume_24h': 0,
+                        'liquidity_usd': 0,
+                        'market_cap': 0,
+                        'risk_score': 0,
+                        'tax_percentage': 0,
+                        'message': f'No new tokens found in last 3 minutes. Reason: All discovered tokens are in cooldown period. Bot is working but waiting for fresh tokens from API.'
+                    })
+                
                 # Send periodic status update every 300 scans (about 50 minutes)
                 if scan_count % 300 == 0:
                     await self.telegram_notifier.send_alert({
