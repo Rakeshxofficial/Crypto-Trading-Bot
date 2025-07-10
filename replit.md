@@ -24,15 +24,41 @@ Preferred communication style: Simple, everyday language.
 - **Error Handling**: Comprehensive logging and graceful error handling throughout
 
 ## Recent Changes (July 10, 2025)
+
+### Alert System Improvements
+1. **Duplicate Prevention**: Enhanced token tracking with configurable cooldown period
+   - 30-minute cooldown for same token alerts (configurable)
+   - Memory-based tracking in TelegramNotifier
+   - Database-based duplicate checking
+
+2. **Rate Limiting**: Implemented Telegram-compliant rate limiting
+   - Maximum 5 alerts per minute (configurable)
+   - Automatic waiting when limit reached
+   - Prevents Telegram API bans
+
+3. **Stability Enhancements**: Added retry logic and better error handling
+   - Exponential backoff for failed sends
+   - Up to 3 retry attempts
+   - Continues operation after errors
+
+4. **Configuration**: All settings now configurable via config.ini
+   - `telegram_rate_limit_per_minute`: Control alert speed
+   - `token_cooldown_minutes`: Duplicate prevention period
+   - `retry_on_error`: Enable/disable retry logic
+   - `max_retry_attempts`: Number of retries
+   - `retry_delay_seconds`: Initial retry delay
+
+### Earlier Updates
 1. **Removed All Fallback Data**: Bot now exclusively uses real Dexscreener API data
    - No hardcoded or fallback tokens
    - Returns empty data on API errors instead of synthetic tokens
    - Added API error notifications to Telegram
 
 2. **Adjusted Safety Filters**: Slightly lowered thresholds to allow more quality tokens
-   - Minimum volume: $500 → $250
-   - Minimum transactions: 10 → 5
-   - Still maintains high quality standards
+   - Minimum liquidity: $10K → $1K
+   - Minimum volume: $500 → $100
+   - Minimum transactions: 10 → 1
+   - Still maintains quality standards
 
 ## Recent Changes (July 9, 2025)
 1. **Enhanced Safety Filters**: Added comprehensive filters to prevent low-quality token alerts

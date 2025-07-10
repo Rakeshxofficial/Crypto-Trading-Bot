@@ -8,6 +8,7 @@ from typing import Dict, Optional
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler
 from telegram.error import TelegramError
+from utils.telegram_rate_limiter import TelegramRateLimiter, TokenTracker
 
 class TelegramNotifier:
     """Handles Telegram notifications and bot interactions"""
@@ -17,6 +18,8 @@ class TelegramNotifier:
         self.logger = logging.getLogger(__name__)
         self.bot = None
         self.application = None
+        self.rate_limiter = TelegramRateLimiter(config.telegram_rate_limit_per_minute)
+        self.token_tracker = TokenTracker(config.token_cooldown_minutes)
         
     async def start(self):
         """Start the Telegram bot"""
@@ -61,29 +64,68 @@ class TelegramNotifier:
             self.logger.error(f"Error stopping Telegram bot: {e}")
     
     async def send_alert(self, alert_data: Dict):
-        """Send trading alert to Telegram"""
+        """Send trading alert to Telegram with rate limiting and retry logic"""
         try:
+            # Extract token info
+            chain = alert_data.get('chain', '')
+            token_address = alert_data.get('token_address', '')
+            token_name = alert_data.get('token_name', 'Unknown')
+            
+            # Check if token is allowed (not in cooldown)
+            if not await self.token_tracker.is_token_allowed(chain, token_address):
+                self.logger.info(f"Skipping {token_name} - still in cooldown period")
+                return False
+            
+            # Apply rate limiting
+            await self.rate_limiter.wait_if_needed()
+            
             # Format alert message
             message = self._format_alert_message(alert_data)
             
             # Create inline keyboard
             keyboard = self._create_alert_keyboard(alert_data)
             
-            # Send message
-            await self.bot.send_message(
-                chat_id=self.config.telegram_chat_id,
-                text=message,
-                parse_mode='HTML',
-                reply_markup=keyboard,
-                disable_web_page_preview=True
-            )
+            # Send message with retry logic
+            retry_count = 0
+            last_error = None
             
-            self.logger.info(f"Alert sent for {alert_data['token_name']}")
+            while retry_count < self.config.max_retry_attempts:
+                try:
+                    await self.bot.send_message(
+                        chat_id=self.config.telegram_chat_id,
+                        text=message,
+                        parse_mode='HTML',
+                        reply_markup=keyboard,
+                        disable_web_page_preview=True
+                    )
+                    
+                    # Mark token as sent
+                    await self.token_tracker.mark_token_sent(chain, token_address)
+                    
+                    self.logger.info(f"Alert sent for {token_name}")
+                    return True
+                    
+                except TelegramError as e:
+                    last_error = e
+                    retry_count += 1
+                    
+                    if retry_count < self.config.max_retry_attempts:
+                        # Exponential backoff
+                        wait_time = self.config.retry_delay_seconds * (2 ** (retry_count - 1))
+                        self.logger.warning(
+                            f"Telegram error (attempt {retry_count}): {e}. "
+                            f"Retrying in {wait_time} seconds..."
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        self.logger.error(f"Failed to send alert after {retry_count} attempts: {e}")
+                        raise
             
-        except TelegramError as e:
-            self.logger.error(f"Telegram error sending alert: {e}")
+            return False
+            
         except Exception as e:
-            self.logger.error(f"Error sending alert: {e}")
+            self.logger.error(f"Error sending alert for {alert_data.get('token_name', 'Unknown')}: {e}")
+            return False
     
     def _format_alert_message(self, alert_data: Dict) -> str:
         """Format the alert message for Telegram"""
@@ -321,6 +363,8 @@ I'll send you alerts when I find promising trading opportunities!
     async def send_error_alert(self, error_message: str):
         """Send error alert to admin"""
         try:
+            # Apply rate limiting for error alerts too
+            await self.rate_limiter.wait_if_needed()
             message = f"""
 🚨 <b>Bot Error Alert</b>
 

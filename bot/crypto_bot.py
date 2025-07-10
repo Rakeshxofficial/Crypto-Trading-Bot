@@ -165,8 +165,11 @@ class CryptoTradingBot:
             # Skip if already processed recently (check database for recent alerts)
             token_key = f"{chain}:{token_address}"
             
-            # Check if we sent an alert for this token in the last 30 minutes to prevent duplicates (reduced from 60)
-            recent_alert = await self.database.check_recent_alert(token_address, chain, minutes=30)
+            # Check if we sent an alert for this token recently
+            # This is a database check - the Telegram notifier also has its own tracking
+            recent_alert = await self.database.check_recent_alert(
+                token_address, chain, minutes=self.config.token_cooldown_minutes
+            )
             if recent_alert:
                 self.logger.info(f"Skipping {token_name} - alert already sent {recent_alert:.0f} minutes ago")
                 return
@@ -200,10 +203,12 @@ class CryptoTradingBot:
                 return
             
             # Token passed all checks - send alert
-            await self._send_trading_alert(token, chain, rug_check_result)
+            alert_sent = await self._send_trading_alert(token, chain, rug_check_result)
             
-            # Mark as processed
-            self.processed_tokens.add(token_key)
+            # Only mark as processed if alert was actually sent
+            if alert_sent:
+                # Mark as processed
+                self.processed_tokens.add(token_key)
             
             # Log successful check
             await self._log_token_check(token, chain, "passed", rug_check_result)
@@ -285,7 +290,7 @@ class CryptoTradingBot:
             self.logger.debug(f"Error checking token age: {e}")
             return True  # Default to allowing the token
     
-    async def _send_trading_alert(self, token: Dict, chain: str, rug_check_result: Dict):
+    async def _send_trading_alert(self, token: Dict, chain: str, rug_check_result: Dict) -> bool:
         """Send trading alert via Telegram"""
         try:
             # Extract token information
@@ -319,16 +324,21 @@ class CryptoTradingBot:
                 'pair_address': token.get('pairAddress', '')
             }
             
-            # Send alert
-            await self.telegram_notifier.send_alert(alert_data)
+            # Send alert - returns True if successful
+            alert_sent = await self.telegram_notifier.send_alert(alert_data)
             
-            # Log alert to database
-            await self._log_alert_to_database(alert_data)
-            
-            self.logger.info(f"Sent trading alert for {token_name} ({token_symbol}) on {chain}")
+            if alert_sent:
+                # Log alert to database only if successfully sent
+                await self._log_alert_to_database(alert_data)
+                self.logger.info(f"Sent trading alert for {token_name} ({token_symbol}) on {chain}")
+                return True
+            else:
+                self.logger.info(f"Alert not sent for {token_name} ({token_symbol}) - likely in cooldown or rate limited")
+                return False
             
         except Exception as e:
             self.logger.error(f"Error sending trading alert: {e}")
+            return False
     
     async def _log_alert_to_database(self, alert_data: Dict):
         """Log sent alert to database"""

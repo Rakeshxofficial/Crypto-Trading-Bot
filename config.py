@@ -31,6 +31,13 @@ class Config:
     api_calls_per_minute: int = 60
     request_delay_seconds: float = 1.0
     
+    # Telegram Alert Settings
+    telegram_rate_limit_per_minute: int = 5  # Max 5 alerts per minute
+    token_cooldown_minutes: int = 30  # Don't repeat same token for 30 minutes
+    retry_on_error: bool = True  # Retry failed operations
+    max_retry_attempts: int = 3  # Maximum retry attempts
+    retry_delay_seconds: float = 2.0  # Initial retry delay (exponential backoff)
+    
     # Supported Blockchains
     supported_chains: List[str] = None
     
@@ -88,6 +95,15 @@ class Config:
                 rate_section = config_parser["rate_limiting"]
                 self.api_calls_per_minute = rate_section.getint("api_calls_per_minute", self.api_calls_per_minute)
                 self.request_delay_seconds = rate_section.getfloat("request_delay_seconds", self.request_delay_seconds)
+            
+            # Alerts section
+            if "alerts" in config_parser:
+                alerts_section = config_parser["alerts"]
+                self.telegram_rate_limit_per_minute = alerts_section.getint("telegram_rate_limit_per_minute", self.telegram_rate_limit_per_minute)
+                self.token_cooldown_minutes = alerts_section.getint("token_cooldown_minutes", self.token_cooldown_minutes)
+                self.retry_on_error = alerts_section.getboolean("retry_on_error", self.retry_on_error)
+                self.max_retry_attempts = alerts_section.getint("max_retry_attempts", self.max_retry_attempts)
+                self.retry_delay_seconds = alerts_section.getfloat("retry_delay_seconds", self.retry_delay_seconds)
     
     def _validate_config(self):
         """Validate required configuration parameters"""
