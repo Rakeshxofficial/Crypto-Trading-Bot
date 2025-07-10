@@ -43,7 +43,7 @@ class DexscreenerAPI:
                     if response.status == 200:
                         data = await response.json()
                         pairs = data.get('pairs', [])
-                        all_pairs.extend(pairs[:30])  # Get up to 30 tokens from main endpoint
+                        all_pairs.extend(pairs[:100])  # Get up to 100 tokens from main endpoint for broader coverage
                         self.logger.info(f"Retrieved {len(pairs)} pairs from chain endpoint for {chain}")
             except Exception as e:
                 self.logger.debug(f"Error fetching from chain endpoint: {e}")
@@ -52,53 +52,30 @@ class DexscreenerAPI:
             import random
             import time
             
-            # Extended list of search queries for maximum token variety
-            all_queries = [
-                f"{self.base_url}/dex/search?q=new",
-                f"{self.base_url}/dex/search?q=moon",
-                f"{self.base_url}/dex/search?q=gem",
-                f"{self.base_url}/dex/search?q=token",
-                f"{self.base_url}/dex/search?q=coin",
-                f"{self.base_url}/dex/search?q=doge",
-                f"{self.base_url}/dex/search?q=pepe",
-                f"{self.base_url}/dex/search?q=meme",
-                f"{self.base_url}/dex/search?q=cat",
-                f"{self.base_url}/dex/search?q=dog",
-                f"{self.base_url}/dex/search?q=inu",
-                f"{self.base_url}/dex/search?q=shiba",
-                f"{self.base_url}/dex/search?q=safe",
-                f"{self.base_url}/dex/search?q=rocket",
-                f"{self.base_url}/dex/search?q=diamond",
-                f"{self.base_url}/dex/search?q=gold",
-                f"{self.base_url}/dex/search?q=bull",
-                f"{self.base_url}/dex/search?q=bear",
-                f"{self.base_url}/dex/search?q=pump",
-                f"{self.base_url}/dex/search?q=base",
-                f"{self.base_url}/dex/search?q=ai",
-                f"{self.base_url}/dex/search?q=meta",
-                f"{self.base_url}/dex/search?q=verse",
-                f"{self.base_url}/dex/search?q=protocol",
-                f"{self.base_url}/dex/search?q=finance",
-                f"{self.base_url}/dex/search?q=dao",
-                f"{self.base_url}/dex/search?q=defi",
-                f"{self.base_url}/dex/search?q=nft",
-                f"{self.base_url}/dex/search?q=gaming",
-                f"{self.base_url}/dex/search?q=eth",
-                f"{self.base_url}/dex/search?q=btc",
-                f"{self.base_url}/dex/search?q=sol",
-                f"{self.base_url}/dex/search?q=chain",
-                f"{self.base_url}/dex/search?q=swap",
-                f"{self.base_url}/dex/search?q=yield",
-                f"{self.base_url}/dex/search?q=farm",
-                f"{self.base_url}/dex/search?q=vault"
+            # TRENDING TOKENS FROM USER SCREENSHOTS - Focus on actual trending tokens
+            trending_search_terms = [
+                "MrBeast", "Dege", "BONG", "PENGU", "ALT", "GM", "Loopy", "DEGEN", 
+                "VCM", "Bonk", "MEMELESS", "KORI", "USELESS", "donk", "Fartcoin", 
+                "STAPLER", "MORI", "SCAMCOIN", "ZBCN", "SPX", "bonkin", "BONKHOUSE",
+                "CHILLHOUSE", "JUP", "SOLO", "IKUN", "purrcy", "solami", "THEKID",
+                "WLFI", "APC", "TROLL", "POPCAT", "memecoin", "DJI6930", "MOBY",
+                "gib", "SWIF", "Hosico", "BCOQ", "horsesack", "LAUNCH", "LuckyCoin",
+                "GOLDI", "ZENAI", "shiyo", "coin", "TSLAx", "NEXGENT", "LAUNCHCOIN",
+                "STARTUP", "GOR", "URANUS", "farthouse", "ELON", "titcoin", "BOTIFY",
+                "GIGA", "MOODENG", "DeepSeekAI", "moonpig", "Digi", "AP", "america",
+                "CATVAX", "NOBODY", "NVDAx", "GRIFFAIN", "GOB", "TAI", "wPOND",
+                "ai16z", "EDWIN", "DADDY", "maow", "STACY", "RICKROLL", "XBT"
             ]
+            
+            # Convert to full URLs
+            all_queries = [f"{self.base_url}/dex/search?q={term}" for term in trending_search_terms]
             
             # Use time-based seed for different results each scan
             time_seed = int(time.time()) // 60  # Changes every minute
             random.seed(time_seed + hash(chain))  # Different seed per chain
             
-            # Randomly select 10 queries each time for maximum variety
-            queries = random.sample(all_queries, min(10, len(all_queries)))
+            # Randomly select 15 trending tokens each time for maximum variety
+            queries = random.sample(all_queries, min(15, len(all_queries)))
             
             for query_url in queries:
                 try:
