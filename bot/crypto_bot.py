@@ -74,11 +74,23 @@ class CryptoTradingBot:
         scan_count = 0
         while self.is_running:
             try:
-                # Clear processed tokens every 200 scans (about 30-40 minutes) to re-alert on good opportunities
+                # Clear processed tokens every 100 scans (about 15-20 minutes) to allow re-checking
                 scan_count += 1
-                if scan_count % 200 == 0:
-                    self.processed_tokens.clear()
-                    self.logger.info("Cleared processed tokens cache for fresh alerts")
+                if scan_count % 100 == 0:
+                    # Keep only recent tokens to avoid re-alerting too soon
+                    current_time = datetime.now()
+                    tokens_to_remove = []
+                    for token_key in self.processed_tokens:
+                        if token_key not in self.last_scan_time:
+                            tokens_to_remove.append(token_key)
+                        elif current_time - self.last_scan_time[token_key] > timedelta(minutes=30):
+                            tokens_to_remove.append(token_key)
+                    
+                    for token_key in tokens_to_remove:
+                        self.processed_tokens.discard(token_key)
+                        self.last_scan_time.pop(token_key, None)
+                    
+                    self.logger.info(f"Cleaned up {len(tokens_to_remove)} old tokens from cache")
                 
                 # Scan all supported blockchains concurrently
                 tasks = []
@@ -207,8 +219,9 @@ class CryptoTradingBot:
             
             # Only mark as processed if alert was actually sent
             if alert_sent:
-                # Mark as processed
+                # Mark as processed with timestamp
                 self.processed_tokens.add(token_key)
+                self.last_scan_time[token_key] = datetime.now()
             
             # Log successful check
             await self._log_token_check(token, chain, "passed", rug_check_result)

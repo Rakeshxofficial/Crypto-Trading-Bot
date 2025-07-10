@@ -35,11 +35,24 @@ class DexscreenerAPI:
             # Get multiple pages of tokens to find more variety
             all_pairs = []
             
-            # Try multiple search queries to get varied results
+            # Get tokens from the chain-specific endpoint for more variety
+            chain_endpoint_url = f"{self.base_url}/dex/pairs/{chain_id}"
+            
+            try:
+                async with session.get(chain_endpoint_url) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        pairs = data.get('pairs', [])
+                        all_pairs.extend(pairs[:50])  # Get up to 50 tokens
+                        self.logger.info(f"Retrieved {len(pairs)} pairs from chain endpoint for {chain}")
+            except Exception as e:
+                self.logger.debug(f"Error fetching from chain endpoint: {e}")
+            
+            # Also try search queries for additional variety
             queries = [
-                f"{self.base_url}/dex/search?q={chain}",
-                f"{self.base_url}/dex/search?q=new",
-                f"{self.base_url}/dex/search?q=trending"
+                f"{self.base_url}/dex/search?q=new%20{chain}",
+                f"{self.base_url}/dex/search?q=moon",
+                f"{self.base_url}/dex/search?q=gem"
             ]
             
             for query_url in queries:
