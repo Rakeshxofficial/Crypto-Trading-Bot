@@ -64,7 +64,7 @@ class TokenTracker:
         self.logger = logging.getLogger(__name__)
         self._lock = asyncio.Lock()
         
-    async def is_token_allowed(self, chain: str, token_address: str) -> bool:
+    async def is_token_allowed(self, chain: str, token_address: str, token_name: str = None) -> bool:
         """Check if token can be sent (not in cooldown)"""
         async with self._lock:
             token_key = f"{chain}:{token_address.lower()}"
@@ -78,7 +78,7 @@ class TokenTracker:
             for key in expired_keys:
                 del self.sent_tokens[key]
             
-            # Check if token is in cooldown
+            # Check if token is in cooldown by address
             if token_key in self.sent_tokens:
                 time_since_sent = current_time - self.sent_tokens[token_key]
                 remaining_cooldown = (self.cooldown_minutes * 60) - time_since_sent
@@ -90,14 +90,37 @@ class TokenTracker:
                     )
                     return False
             
+            # Also check by token name if provided
+            if token_name:
+                name_key = f"{chain}:{token_name.lower()}"
+                if name_key in self.sent_tokens:
+                    time_since_sent = current_time - self.sent_tokens[name_key]
+                    remaining_cooldown = (self.cooldown_minutes * 60) - time_since_sent
+                    
+                    if remaining_cooldown > 0:
+                        self.logger.debug(
+                            f"Token name '{token_name}' on {chain} in cooldown for "
+                            f"{remaining_cooldown/60:.1f} more minutes"
+                        )
+                        return False
+            
             return True
     
-    async def mark_token_sent(self, chain: str, token_address: str):
+    async def mark_token_sent(self, chain: str, token_address: str, token_name: str = None):
         """Mark token as sent"""
         async with self._lock:
+            current_time = time.time()
+            
+            # Mark by address
             token_key = f"{chain}:{token_address.lower()}"
-            self.sent_tokens[token_key] = time.time()
-            self.logger.debug(f"Marked token {token_address} on {chain} as sent")
+            self.sent_tokens[token_key] = current_time
+            
+            # Also mark by name if provided
+            if token_name:
+                name_key = f"{chain}:{token_name.lower()}"
+                self.sent_tokens[name_key] = current_time
+            
+            self.logger.debug(f"Marked token {token_address} ({token_name}) on {chain} as sent")
     
     def get_active_cooldowns(self) -> int:
         """Get number of tokens currently in cooldown"""

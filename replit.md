@@ -73,14 +73,20 @@ Preferred communication style: Simple, everyday language.
    - Helps users assess token freshness and trading opportunities
    - Displays human-readable format for better decision making
 
-3. **Relaxed Safety Filters**: Significantly more lenient to allow diverse token flow
+3. **Improved Duplicate Detection**: Enhanced system to prevent sending same tokens repeatedly
+   - Dual-layer checking: by token address AND token name
+   - Memory-based tracking in TelegramNotifier with token names
+   - Database-based duplicate checking with name validation
+   - Successfully sending diverse tokens like Gemo, Beenz, SnakeOfSolana, NPC Solana
+
+4. **Relaxed Safety Filters**: Significantly more lenient to allow diverse token flow
    - Minimum liquidity: $1K → $100 (more inclusive)
    - Minimum volume: $100 → $50 (allows newer tokens)
    - Minimum transactions: 1 → 0 (allows brand new tokens)
    - Reduced token cooldown: 30 → 10 minutes (more frequent alerts)
    - Volume and transaction filters now advisory rather than blocking
 
-4. **Enhanced Scanning Frequency**: Faster scanning to find more tokens
+5. **Enhanced Scanning Frequency**: Faster scanning to find more tokens
    - Reduced scan delay from 10 seconds to 5 seconds
    - More frequent checks to build pending alerts queue
    - Improved token discovery rate across all chains

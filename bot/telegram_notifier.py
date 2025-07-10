@@ -72,7 +72,7 @@ class TelegramNotifier:
             token_name = alert_data.get('token_name', 'Unknown')
             
             # Check if token is allowed (not in cooldown)
-            if not await self.token_tracker.is_token_allowed(chain, token_address):
+            if not await self.token_tracker.is_token_allowed(chain, token_address, token_name):
                 self.logger.info(f"Skipping {token_name} - still in cooldown period")
                 return False
             
@@ -100,7 +100,7 @@ class TelegramNotifier:
                     )
                     
                     # Mark token as sent
-                    await self.token_tracker.mark_token_sent(chain, token_address)
+                    await self.token_tracker.mark_token_sent(chain, token_address, token_name)
                     
                     self.logger.info(f"Alert sent for {token_name}")
                     return True
