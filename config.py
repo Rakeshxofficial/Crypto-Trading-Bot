@@ -26,7 +26,7 @@ class Config:
     min_volume_24h: float = 100  # $100 minimum 24h volume (more inclusive)
     min_unique_transactions: int = 0  # No minimum transactions
     volume_to_mcap_ratio_threshold: float = 100.0  # Allow any volume ratio
-    min_token_holders: int = 100  # Minimum 100 token holders required
+    min_token_holders: int = 50  # Minimum 50 token holders required (more inclusive for fresh tokens)
     
     # Price Return Thresholds for Status Classification
     min_return_1h: float = 1.0  # 1% minimum 1-hour return

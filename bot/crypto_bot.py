@@ -85,9 +85,9 @@ class CryptoTradingBot:
                     self.last_minute_reset = current_minute
                     self.logger.info(f"Reset alerts counter for new minute. Target: {self.config.alerts_per_minute_target} alerts")
                 
-                # Clear processed tokens every 100 scans (about 15-20 minutes) to allow re-checking
+                # Clear processed tokens every 50 scans (about 8-10 minutes) to allow re-checking fresh tokens
                 scan_count += 1
-                if scan_count % 100 == 0:
+                if scan_count % 50 == 0:
                     # Keep only recent tokens to avoid re-alerting too soon
                     current_time = datetime.now()
                     tokens_to_remove = []
