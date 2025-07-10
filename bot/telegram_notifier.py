@@ -71,10 +71,10 @@ class TelegramNotifier:
             token_address = alert_data.get('token_address', '')
             token_name = alert_data.get('token_name', 'Unknown')
             
-            # UNLIMITED MODE - No cooldown checks, send all tokens
-            # if not await self.token_tracker.is_token_allowed(chain, token_address, token_name):
-            #     self.logger.info(f"Skipping {token_name} - still in cooldown period")
-            #     return False
+            # DUPLICATE PREVENTION - Check cooldown to prevent same tokens
+            if not await self.token_tracker.is_token_allowed(chain, token_address, token_name):
+                self.logger.info(f"Skipping {token_name} - still in cooldown period")
+                return False
             
             # UNLIMITED MODE - No rate limiting
             # await self.rate_limiter.wait_if_needed()

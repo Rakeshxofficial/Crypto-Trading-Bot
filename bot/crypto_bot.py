@@ -207,22 +207,22 @@ class CryptoTradingBot:
             # Check both by token address AND by token name to prevent duplicates
             token_key = f"{chain}:{token_address}"
             
-            # UNLIMITED MODE - No cooldown checks, send all tokens
+            # DUPLICATE PREVENTION - Check if we sent an alert for this token recently
             # Check if we sent an alert for this token recently (by address)
-            # recent_alert = await self.database.check_recent_alert(
-            #     token_address, chain, minutes=self.config.token_cooldown_minutes
-            # )
-            # if recent_alert:
-            #     self.logger.info(f"Skipping {token_name} - alert already sent {recent_alert:.0f} minutes ago")
-            #     return
+            recent_alert = await self.database.check_recent_alert(
+                token_address, chain, minutes=24*60  # 24 hours to prevent any duplicates
+            )
+            if recent_alert:
+                self.logger.info(f"Skipping {token_name} - alert already sent {recent_alert:.0f} minutes ago")
+                return
             
             # Additional check by token name to prevent same token with different addresses
-            # recent_name_alert = await self.database.check_recent_alert_by_name(
-            #     token_name, chain, minutes=self.config.token_cooldown_minutes
-            # )
-            # if recent_name_alert:
-            #     self.logger.info(f"Skipping {token_name} - same token name already sent {recent_name_alert:.0f} minutes ago")
-            #     return
+            recent_name_alert = await self.database.check_recent_alert_by_name(
+                token_name, chain, minutes=24*60  # 24 hours to prevent any duplicates
+            )
+            if recent_name_alert:
+                self.logger.info(f"Skipping {token_name} - same token name already sent {recent_name_alert:.0f} minutes ago")
+                return
             
             # UNLIMITED MODE - No token age checks, send all tokens
             # Check token age
