@@ -17,24 +17,24 @@ class Config:
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
     
-    # Trading Parameters
-    max_market_cap: float = 5_000_000  # $5M
-    min_market_cap: float = 10_000  # $10K minimum market cap
-    min_token_age_minutes: int = 1  # Tokens must be at least 1 minute old (lowered from 5)
-    max_tax_percentage: float = 10.0
-    min_liquidity_usd: float = 100  # $100 minimum liquidity (lowered for more tokens)
-    min_volume_24h: float = 50  # $50 minimum 24h volume (lowered for more tokens)
-    min_unique_transactions: int = 0  # Allow tokens with 0 transactions for new tokens
-    volume_to_mcap_ratio_threshold: float = 0.1
+    # Trading Parameters - NO RESTRICTIONS
+    max_market_cap: float = 100_000_000_000  # $100B - virtually unlimited
+    min_market_cap: float = 0  # No minimum market cap
+    min_token_age_minutes: int = 0  # No minimum age - send all tokens
+    max_tax_percentage: float = 100.0  # Allow any tax percentage
+    min_liquidity_usd: float = 0  # No minimum liquidity
+    min_volume_24h: float = 0  # No minimum volume
+    min_unique_transactions: int = 0  # No minimum transactions
+    volume_to_mcap_ratio_threshold: float = 100.0  # Allow any volume ratio
     
     # Rate Limiting
     api_calls_per_minute: int = 60
     request_delay_seconds: float = 1.0
     
     # Telegram Alert Settings
-    telegram_rate_limit_per_minute: int = 5  # Max 5 alerts per minute
-    token_cooldown_minutes: int = 3  # Don't repeat same token for 3 minutes (reduced for more flow)
-    alerts_per_minute_target: int = 5  # Target 5 alerts per minute
+    telegram_rate_limit_per_minute: int = 1000  # Unlimited alerts per minute
+    token_cooldown_minutes: int = 0  # No cooldown - send all tokens immediately
+    alerts_per_minute_target: int = 1000  # Send as many tokens as possible
     retry_on_error: bool = True  # Retry failed operations
     max_retry_attempts: int = 3  # Maximum retry attempts
     retry_delay_seconds: float = 2.0  # Initial retry delay (exponential backoff)

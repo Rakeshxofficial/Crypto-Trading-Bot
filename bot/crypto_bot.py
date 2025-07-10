@@ -207,26 +207,28 @@ class CryptoTradingBot:
             # Check both by token address AND by token name to prevent duplicates
             token_key = f"{chain}:{token_address}"
             
+            # UNLIMITED MODE - No cooldown checks, send all tokens
             # Check if we sent an alert for this token recently (by address)
-            recent_alert = await self.database.check_recent_alert(
-                token_address, chain, minutes=self.config.token_cooldown_minutes
-            )
-            if recent_alert:
-                self.logger.info(f"Skipping {token_name} - alert already sent {recent_alert:.0f} minutes ago")
-                return
+            # recent_alert = await self.database.check_recent_alert(
+            #     token_address, chain, minutes=self.config.token_cooldown_minutes
+            # )
+            # if recent_alert:
+            #     self.logger.info(f"Skipping {token_name} - alert already sent {recent_alert:.0f} minutes ago")
+            #     return
             
             # Additional check by token name to prevent same token with different addresses
-            recent_name_alert = await self.database.check_recent_alert_by_name(
-                token_name, chain, minutes=self.config.token_cooldown_minutes
-            )
-            if recent_name_alert:
-                self.logger.info(f"Skipping {token_name} - same token name already sent {recent_name_alert:.0f} minutes ago")
-                return
+            # recent_name_alert = await self.database.check_recent_alert_by_name(
+            #     token_name, chain, minutes=self.config.token_cooldown_minutes
+            # )
+            # if recent_name_alert:
+            #     self.logger.info(f"Skipping {token_name} - same token name already sent {recent_name_alert:.0f} minutes ago")
+            #     return
             
+            # UNLIMITED MODE - No token age checks, send all tokens
             # Check token age
-            if not self._is_token_old_enough(token):
-                self.logger.debug(f"Skipping {token_name} ({token_symbol}) - too young")
-                return
+            # if not self._is_token_old_enough(token):
+            #     self.logger.debug(f"Skipping {token_name} ({token_symbol}) - too young")
+            #     return
             
             # Apply rate limiting for API calls
             await self.rate_limiter.wait()
@@ -234,36 +236,38 @@ class CryptoTradingBot:
             # Perform rug pull detection
             rug_check_result = await self.rug_detector.check_token(token_address, chain)
             
-            if rug_check_result.get('is_rug_risk', False):
-                self.logger.info(f"Skipping {token_name} ({token_symbol}) - rug risk detected")
-                await self._log_token_check(token, chain, "rug_risk", rug_check_result)
-                return
+            # UNLIMITED MODE - No rug risk checks, send all tokens
+            # if rug_check_result.get('is_rug_risk', False):
+            #     self.logger.info(f"Skipping {token_name} ({token_symbol}) - rug risk detected")
+            #     await self._log_token_check(token, chain, "rug_risk", rug_check_result)
+            #     return
             
+            # UNLIMITED MODE - No safety filters or fake volume checks, send all tokens
             # Apply additional safety filters
-            if not self._passes_safety_filters(token):
-                self.logger.debug(f"Token {token_name} ({token_symbol}) failed safety filters, but adding to pending queue")
-                # Add to pending alerts queue instead of skipping
-                self.pending_alerts.append({
-                    'token': token,
-                    'chain': chain,
-                    'rug_check_result': rug_check_result,
-                    'priority': 'low'
-                })
-                await self._log_token_check(token, chain, "safety_filter_failed", {})
-                return
+            # if not self._passes_safety_filters(token):
+            #     self.logger.debug(f"Token {token_name} ({token_symbol}) failed safety filters, but adding to pending queue")
+            #     # Add to pending alerts queue instead of skipping
+            #     self.pending_alerts.append({
+            #         'token': token,
+            #         'chain': chain,
+            #         'rug_check_result': rug_check_result,
+            #         'priority': 'low'
+            #     })
+            #     await self._log_token_check(token, chain, "safety_filter_failed", {})
+            #     return
             
             # Check for fake volume
-            if self.volume_filter.is_fake_volume(token):
-                self.logger.debug(f"Token {token_name} ({token_symbol}) has fake volume but adding to pending queue")
-                # Add to pending alerts queue instead of skipping
-                self.pending_alerts.append({
-                    'token': token,
-                    'chain': chain,
-                    'rug_check_result': rug_check_result,
-                    'priority': 'low'
-                })
-                await self._log_token_check(token, chain, "fake_volume", {})
-                return
+            # if self.volume_filter.is_fake_volume(token):
+            #     self.logger.debug(f"Token {token_name} ({token_symbol}) has fake volume but adding to pending queue")
+            #     # Add to pending alerts queue instead of skipping
+            #     self.pending_alerts.append({
+            #         'token': token,
+            #         'chain': chain,
+            #         'rug_check_result': rug_check_result,
+            #         'priority': 'low'
+            #     })
+            #     await self._log_token_check(token, chain, "fake_volume", {})
+            #     return
             
             # Token passed all checks - send alert immediately
             alert_sent = await self._send_trading_alert(token, chain, rug_check_result)
@@ -285,55 +289,8 @@ class CryptoTradingBot:
             self.logger.error(f"Error processing token {token.get('baseToken', {}).get('name', 'Unknown')}: {e}")
     
     def _passes_safety_filters(self, token: Dict) -> bool:
-        """Apply comprehensive safety filters to token"""
-        try:
-            # Extract token data
-            liquidity_usd = token.get('liquidity', {}).get('usd', 0)
-            volume_24h = token.get('volume', {}).get('h24', 0) 
-            market_cap = token.get('fdv', 0) or token.get('marketCap', 0)
-            txns = token.get('txns', {})
-            
-            # 1. Minimum Liquidity Filter
-            if liquidity_usd < self.config.min_liquidity_usd:
-                self.logger.info(f"Failed liquidity filter for {token.get('baseToken', {}).get('name', 'Unknown')}: ${liquidity_usd:.2f} < ${self.config.min_liquidity_usd}")
-                return False
-            
-            # 2. Minimum Market Cap (already checked in filter_by_market_cap, but double-check)
-            if market_cap < self.config.min_market_cap:
-                self.logger.debug(f"Failed market cap filter: ${market_cap:.2f} < ${self.config.min_market_cap}")
-                return False
-            
-            # 3. Minimum 24h Volume (more lenient)
-            if volume_24h < self.config.min_volume_24h:
-                self.logger.debug(f"Low volume for {token.get('baseToken', {}).get('name', 'Unknown')}: ${volume_24h:.2f} < ${self.config.min_volume_24h}")
-                # Don't return False for low volume - allow it through
-            
-            # 4. Minimum Unique Transactions (more lenient)
-            buys_1h = txns.get('h1', {}).get('buys', 0)
-            sells_1h = txns.get('h1', {}).get('sells', 0)
-            total_txns = buys_1h + sells_1h
-            
-            if buys_1h < self.config.min_unique_transactions:
-                self.logger.debug(f"Low transaction activity for {token.get('baseToken', {}).get('name', 'Unknown')}: {buys_1h} buys")
-                # Don't return False for low activity - allow it through
-            
-            # 5. Flag tokens with only 1 buyer/seller (suspicious) - RELAXED
-            if buys_1h == 0:  # Only block if NO buys at all
-                self.logger.debug(f"No buy transactions in last hour")
-                return False
-            
-            # 6. Check for reasonable buy/sell ratio (avoid pump schemes) - RELAXED
-            if sells_1h > 0:
-                buy_sell_ratio = buys_1h / sells_1h
-                if buy_sell_ratio > 20:  # Only block extreme cases (was 10)
-                    self.logger.debug(f"Extremely suspicious buy/sell ratio: {buy_sell_ratio:.2f}")
-                    return False
-            
-            return True
-            
-        except Exception as e:
-            self.logger.debug(f"Error in safety filters: {e}")
-            return False
+        """Apply comprehensive safety filters to token - UNLIMITED MODE: RETURN TRUE FOR ALL"""
+        return True  # UNLIMITED MODE - No restrictions, send all tokens
     
     def _is_token_old_enough(self, token: Dict) -> bool:
         """Check if token is old enough based on configuration"""
@@ -391,6 +348,37 @@ class CryptoTradingBot:
             self.logger.debug(f"Error calculating token age: {e}")
             return "Unknown"
     
+    def _get_token_holders(self, token: Dict) -> str:
+        """Get token holders count as a string"""
+        try:
+            # Try to get holder count from various fields in the token data
+            holders = token.get('holders', 0)
+            if holders and holders > 0:
+                return f"{holders:,}"
+            
+            # Alternative field names that might contain holder information
+            holder_count = token.get('holderCount', 0)
+            if holder_count and holder_count > 0:
+                return f"{holder_count:,}"
+            
+            # Check if transaction data can give us an estimate
+            txns = token.get('txns', {})
+            h24_data = txns.get('h24', {})
+            
+            # Estimate based on unique buyers/sellers (rough approximation)
+            unique_buyers = h24_data.get('buys', 0)
+            unique_sellers = h24_data.get('sells', 0)
+            
+            if unique_buyers > 0 or unique_sellers > 0:
+                estimated_holders = unique_buyers + unique_sellers
+                return f"~{estimated_holders:,}"
+            
+            return "Unknown"
+            
+        except Exception as e:
+            self.logger.debug(f"Error getting token holders: {e}")
+            return "Unknown"
+    
     async def _send_trading_alert(self, token: Dict, chain: str, rug_check_result: Dict) -> bool:
         """Send trading alert via Telegram"""
         try:
@@ -406,9 +394,10 @@ class CryptoTradingBot:
             liquidity_usd = token.get('liquidity', {}).get('usd', 0)
             market_cap = token.get('fdv', 0) or token.get('marketCap', 0)
             
-            # Calculate risk score and token age
+            # Calculate risk score, token age, and extract token holders
             risk_score = self._calculate_risk_score(token, rug_check_result)
             token_age = self._get_token_age(token)
+            token_holders = self._get_token_holders(token)
             
             # Create alert message
             alert_data = {
@@ -424,7 +413,8 @@ class CryptoTradingBot:
                 'tax_percentage': rug_check_result.get('tax_percentage', 0),
                 'chart_url': token.get('url', ''),
                 'pair_address': token.get('pairAddress', ''),
-                'token_age': token_age
+                'token_age': token_age,
+                'token_holders': token_holders
             }
             
             # Send alert - returns True if successful

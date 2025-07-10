@@ -71,13 +71,13 @@ class TelegramNotifier:
             token_address = alert_data.get('token_address', '')
             token_name = alert_data.get('token_name', 'Unknown')
             
-            # Check if token is allowed (not in cooldown)
-            if not await self.token_tracker.is_token_allowed(chain, token_address, token_name):
-                self.logger.info(f"Skipping {token_name} - still in cooldown period")
-                return False
+            # UNLIMITED MODE - No cooldown checks, send all tokens
+            # if not await self.token_tracker.is_token_allowed(chain, token_address, token_name):
+            #     self.logger.info(f"Skipping {token_name} - still in cooldown period")
+            #     return False
             
-            # Apply rate limiting
-            await self.rate_limiter.wait_if_needed()
+            # UNLIMITED MODE - No rate limiting
+            # await self.rate_limiter.wait_if_needed()
             
             # Format alert message
             message = self._format_alert_message(alert_data)
@@ -99,8 +99,8 @@ class TelegramNotifier:
                         disable_web_page_preview=True
                     )
                     
-                    # Mark token as sent
-                    await self.token_tracker.mark_token_sent(chain, token_address, token_name)
+                    # UNLIMITED MODE - Don't track tokens, send all
+                    # await self.token_tracker.mark_token_sent(chain, token_address, token_name)
                     
                     self.logger.info(f"Alert sent for {token_name}")
                     return True
@@ -144,6 +144,7 @@ class TelegramNotifier:
             risk_score = float(alert_data.get('risk_score', 0))
             tax_percentage = float(alert_data.get('tax_percentage', 0))
             token_age = alert_data.get('token_age', 'Unknown')
+            token_holders = alert_data.get('token_holders', 'Unknown')
             
             # Risk level indicator
             risk_emoji = self._get_risk_emoji(risk_score)
@@ -155,6 +156,7 @@ class TelegramNotifier:
 📊 <b>{token_name} ({token_symbol})</b>
 🔗 <b>Chain:</b> {chain}
 ⏰ <b>Token Age:</b> {token_age}
+👥 <b>Token Holders:</b> {token_holders}
 💰 <b>Price:</b> ${price_usd:.8f}
 📈 <b>24h Volume:</b> ${volume_24h:,.0f}
 💧 <b>Liquidity:</b> ${liquidity_usd:,.0f}

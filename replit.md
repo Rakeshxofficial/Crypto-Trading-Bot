@@ -25,7 +25,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (July 10, 2025)
 
-### Telegram Channel Configuration (Latest Update)
+### Unlimited Token Mode (Latest Update)
+1. **Removed All Restrictions**: Bot now configured for unlimited token sending
+   - Removed all cooldown periods (0 minutes)
+   - Removed all safety filters and restrictions
+   - Unlimited alerts per minute (1000 instead of 5)
+   - No token age, rug risk, or volume checks
+   - Send all tokens immediately regardless of quality
+   - Added token holders count to alert messages
+
+2. **Enhanced Alert Messages**: Added token holders information
+   - Each alert now shows total token holders count
+   - Displays as exact number when available or estimated count
+   - Format: "👥 Token Holders: 1,234" or "👥 Token Holders: ~50"
+
+### Telegram Channel Configuration (Previous Update)
 1. **Alert Destination Changed**: Successfully updated bot to send alerts to Telegram channel
    - Changed from individual user ID to channel ID: -1002767799900
    - All future crypto token alerts will be sent to "Rich Alert..." channel
