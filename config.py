@@ -43,7 +43,7 @@ class Config:
     
     # Telegram Alert Settings
     telegram_rate_limit_per_minute: int = 1000  # Unlimited alerts per minute
-    token_cooldown_minutes: int = 24*60  # 24 hours cooldown - prevent any duplicates
+    token_cooldown_minutes: int = 6*60  # 6 hours cooldown - allow multiple daily alerts
     alerts_per_minute_target: int = 1000  # Send as many tokens as possible
     retry_on_error: bool = True  # Retry failed operations
     max_retry_attempts: int = 3  # Maximum retry attempts
