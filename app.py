@@ -15,6 +15,9 @@ from config import Config
 from bot.crypto_bot import CryptoTradingBot
 
 # Configure logging
+# Create logs directory if it doesn't exist
+os.makedirs('logs', exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

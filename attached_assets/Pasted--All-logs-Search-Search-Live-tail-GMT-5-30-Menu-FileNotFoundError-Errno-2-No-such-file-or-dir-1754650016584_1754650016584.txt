@@ -1,0 +1,52 @@
+
+
+All logs
+Search
+Search
+
+Live tail
+GMT+5:30
+
+Menu
+
+FileNotFoundError: [Errno 2] No such file or directory: '/opt/render/project/src/logs/crypto_bot.log'
+                     encoding=self.encoding, errors=self.errors)
+    return open_func(self.baseFilename, self.mode,
+  File "/usr/local/lib/python3.13/logging/__init__.py", line 1248, in _open
+                                 ~~~~~~~~~~^^
+    StreamHandler.__init__(self, self._open())
+  File "/usr/local/lib/python3.13/logging/__init__.py", line 1219, in __init__
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+    logging.FileHandler('logs/crypto_bot.log'),
+  File "/opt/render/project/src/app.py", line 22, in <module>
+Traceback (most recent call last):
+==> Running 'python app.py'
+FileNotFoundError: [Errno 2] No such file or directory: '/opt/render/project/src/logs/crypto_bot.log'
+                     encoding=self.encoding, errors=self.errors)
+    return open_func(self.baseFilename, self.mode,
+  File "/usr/local/lib/python3.13/logging/__init__.py", line 1248, in _open
+                                 ~~~~~~~~~~^^
+    StreamHandler.__init__(self, self._open())
+  File "/usr/local/lib/python3.13/logging/__init__.py", line 1219, in __init__
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+    logging.FileHandler('logs/crypto_bot.log'),
+  File "/opt/render/project/src/app.py", line 22, in <module>
+Traceback (most recent call last):
+==> Running 'python app.py'
+FileNotFoundError: [Errno 2] No such file or directory: '/opt/render/project/src/logs/crypto_bot.log'
+                     encoding=self.encoding, errors=self.errors)
+    return open_func(self.baseFilename, self.mode,
+  File "/usr/local/lib/python3.13/logging/__init__.py", line 1248, in _open
+                                 ~~~~~~~~~~^^
+    StreamHandler.__init__(self, self._open())
+  File "/usr/local/lib/python3.13/logging/__init__.py", line 1219, in __init__
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+    logging.FileHandler('logs/crypto_bot.log'),
+  File "/opt/render/project/src/app.py", line 22, in <module>
+Traceback (most recent call last):
+==> Running 'python app.py'
+==> Your service is live 🎉
+==> Deploying...
+==> Build successful 🎉
+==> Uploaded in 6.9s. Compression took 1.8s
+==> Uploading build...
